@@ -1,4 +1,27 @@
-# Propuesta de stack y arquitectura (fase 0, **pendiente de tu OK**)
+# Stack y arquitectura
+
+## 0. Decisiones aprobadas (fase 0)
+
+| # | Decisión | Elección |
+|---|---|---|
+| 1 | Stack | Expo + React Native + TypeScript (Expo SDK 58) |
+| 2 | Idioma de la biblioteca | ~150 ejercicios redactados en español; el resto con el texto original de free-exercise-db |
+| 3 | ExerciseDB | Descartado (licencia de los GIF no libre) |
+| 4 | Progresión en déficit | Modo prudente: +2,5 kg en pierna si la última sesión fue al RIR 0; nunca dos subidas seguidas |
+| 5 | APK | EAS Build en la nube (perfil `preview`) |
+| 6 | Copia de seguridad | JSON + opción ZIP con las fotos |
+
+## Notas de implementación (fase 2)
+
+- **Migraciones**: drizzle-kit genera el SQL en `drizzle/`; `scripts/build-migrations.mjs` lo incrusta en `src/db/migrations.ts`, que se aplica con `useMigrations` al arrancar. Así no hace falta ningún plugin de Babel y los tests usan el mismo SQL.
+- **Datos iniciales** (`src/db/seed.ts`): son idempotentes. Crean el perfil (185 cm, 95 kg), la biblioteca (876 ejercicios de free-exercise-db + fichas en español) y la rutina por defecto. La biblioteca se reaplica al subir `LIBRARY_VERSION`, conservando los favoritos.
+- **Apertura asíncrona** de la BD (`initDb`) antes de montar la navegación. `db` es un proxy hacia la instancia de Drizzle.
+- **Tests**: Jest con `jest-expo`. Los tests de la base de datos usan `node:sqlite` en memoria con el driver `sqlite-proxy` de Drizzle.
+- **Rotación de días**: el «día de hoy» es el siguiente al último entrenado. Con 4 días/semana se salta el día opcional.
+
+---
+
+# Propuesta original (fase 0)
 
 ## 1. Stack recomendado
 

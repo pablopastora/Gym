@@ -12,6 +12,8 @@ import { colors } from '@/ui/theme';
 
 type Form = {
   daysPerWeek: number;
+  effortMetric: 'rir' | 'rpe' | 'ninguno';
+  barKg: string;
   incUpper: string;
   incLower: string;
   restCompound: string;
@@ -30,6 +32,8 @@ export default function AjustesEntrenamiento() {
 function EntrenamientoForm({ p }: { p: Profile }) {
   const [form, setForm] = useState<Form>(() => ({
     daysPerWeek: p.daysPerWeek,
+    effortMetric: p.effortMetric,
+    barKg: s(p.barKg),
     incUpper: s(p.incrementUpperKg),
     incLower: s(p.incrementLowerKg),
     restCompound: s(p.restCompoundS),
@@ -48,7 +52,9 @@ function EntrenamientoForm({ p }: { p: Profile }) {
     const n = parseDecimal(v);
     return n == null || n < 15 || n > 600 || !Number.isInteger(n) ? 'Entre 15 y 600 s' : null;
   };
+  const bar = parseDecimal(form.barKg);
   const errors = {
+    barKg: bar == null || bar < 0 || bar > 30 ? 'Entre 0 y 30 kg' : null,
     incUpper: inc(form.incUpper),
     incLower: inc(form.incLower),
     restCompound: rest(form.restCompound),
@@ -60,6 +66,8 @@ function EntrenamientoForm({ p }: { p: Profile }) {
   const save = async () => {
     await updateProfile(db, {
       daysPerWeek: form.daysPerWeek,
+      effortMetric: form.effortMetric,
+      barKg: bar!,
       incrementUpperKg: parseDecimal(form.incUpper)!,
       incrementLowerKg: parseDecimal(form.incLower)!,
       restCompoundS: parseDecimal(form.restCompound)!,
@@ -85,6 +93,23 @@ function EntrenamientoForm({ p }: { p: Profile }) {
         Con 4 días se salta el día 5 (opcional) de la rutina.
       </Txt>
 
+      <SectionTitle>Esfuerzo por serie</SectionTitle>
+      <Segmented
+        options={[
+          { value: 'rir', label: 'RIR' },
+          { value: 'rpe', label: 'RPE' },
+          { value: 'ninguno', label: 'Ninguno' },
+        ]}
+        value={form.effortMetric}
+        onChange={(v) => set({ effortMetric: v })}
+      />
+      <Txt variant="small" color={colors.textDim}>
+        RIR = repeticiones que te quedaban en reserva (0 = al fallo). RPE = esfuerzo de 1 a 10. Es opcional en cada serie.
+      </Txt>
+
+      <SectionTitle>Calentamiento</SectionTitle>
+      <Field label="Peso de la barra olímpica" suffix="kg" keyboardType="decimal-pad" value={form.barKg} onChangeText={(v) => set({ barKg: v })} error={errors.barKg} />
+
       <SectionTitle>Incremento de carga (doble progresión)</SectionTitle>
       <Row style={{ alignItems: 'flex-start' }}>
         <View style={{ flex: 1 }}>
@@ -106,7 +131,8 @@ function EntrenamientoForm({ p }: { p: Profile }) {
           <Switch
             value={form.deficitMode}
             onValueChange={(v) => set({ deficitMode: v })}
-            trackColor={{ true: colors.primary, false: colors.border }}
+            trackColor={{ true: colors.accent, false: colors.border }}
+            thumbColor={colors.text}
           />
         </Row>
       </Card>

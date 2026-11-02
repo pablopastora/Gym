@@ -42,6 +42,10 @@ export const profile = sqliteTable('profile', {
   restAccessoryS: integer('rest_accessory_s').notNull().default(75),
   restAbsS: integer('rest_abs_s').notNull().default(50),
   lastDeloadDate: text('last_deload_date'),
+  /** Métrica de esfuerzo que se pide en cada serie. */
+  effortMetric: text('effort_metric', { enum: ['rir', 'rpe', 'ninguno'] }).notNull().default('rir'),
+  /** Peso de la barra olímpica para la calculadora de calentamiento. */
+  barKg: real('bar_kg').notNull().default(20),
   updatedAt: integer('updated_at'),
 });
 

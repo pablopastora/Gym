@@ -19,6 +19,14 @@
 - **Tests**: Jest con `jest-expo`. Los tests de la base de datos usan `node:sqlite` en memoria con el driver `sqlite-proxy` de Drizzle.
 - **Rotación de días**: el «día de hoy» es el siguiente al último entrenado. Con 4 días/semana se salta el día opcional.
 
+## Notas de implementación (fase 3)
+
+- **Sesión activa** (`src/app/sesion/index.tsx`): la base de datos es la fuente de verdad y cada cambio se guarda al instante, así que la sesión sobrevive si Android cierra la app. Solo puede haber una sesión abierta (`workout.ended_at` nulo).
+- **Relleno con la última vez**: al empezar, cada serie de trabajo toma el peso y las reps de la serie equivalente de la última sesión terminada con ese ejercicio. Los calentamientos se calculan sobre el peso más alto (40/60/80 %, redondeado a 2,5 kg y con la barra como mínimo). Si repites lo mismo, basta un toque en ✓.
+- **Temporizador**: guarda la hora de fin (`stores/restTimer.ts`) y programa una notificación local en el canal `descanso` (importancia máxima, vibración y sonido). Con la app abierta, esa notificación se suprime y `RestTimerWatcher` vibra. Al hacer ±15 s se reprograma.
+- **Descanso**: el de la serie de trabajo es el del ejercicio en la rutina (si no hay, el del ejercicio y luego el del tipo); tras un calentamiento son 60 s.
+- **Tema** centralizado en `src/ui/theme.ts`, con tests de contraste WCAG.
+
 ---
 
 # Propuesta original (fase 0)

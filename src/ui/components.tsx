@@ -14,7 +14,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, font, radius, space, TOUCH } from './theme';
+import { colors, font, fonts, radius, space, TOUCH } from './theme';
 
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -73,7 +73,7 @@ export function Card({ children, style, onPress }: { children: ReactNode; style?
 export function SectionTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
   return (
     <View style={styles.sectionTitle}>
-      <Txt variant="caption" color={colors.textDim} style={{ textTransform: 'uppercase', letterSpacing: 1 }}>
+      <Txt variant="label" color={colors.textDim}>
         {children}
       </Txt>
       {right}
@@ -101,12 +101,12 @@ export function BigButton({
   style?: StyleProp<ViewStyle>;
 }) {
   const bg = {
-    primary: colors.primary,
+    primary: colors.accent,
     secondary: colors.surface2,
-    danger: colors.danger,
+    danger: colors.accentPressed,
     ghost: 'transparent',
   }[kind];
-  const fg = kind === 'secondary' || kind === 'ghost' ? colors.text : colors.onPrimary;
+  const fg = kind === 'secondary' || kind === 'ghost' ? colors.text : colors.onAccent;
   return (
     <Pressable
       accessibilityRole="button"
@@ -114,7 +114,7 @@ export function BigButton({
       disabled={disabled || loading}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: bg, opacity: disabled ? 0.4 : pressed ? 0.8 : 1 },
+        { backgroundColor: pressed && kind === 'primary' ? colors.accentPressed : bg, opacity: disabled ? 0.4 : pressed ? 0.85 : 1 },
         kind === 'ghost' && { borderWidth: 1, borderColor: colors.border },
         style,
       ]}>
@@ -123,7 +123,7 @@ export function BigButton({
       ) : (
         <>
           {icon && <Icon name={icon} size={22} color={fg} />}
-          <Txt variant="bodyBold" color={fg}>
+          <Txt variant="button" color={fg}>
             {title}
           </Txt>
         </>
@@ -172,7 +172,8 @@ export function Field({
       <View style={[styles.inputWrap, error ? { borderColor: colors.danger } : null]}>
         <TextInput
           placeholderTextColor={colors.textFaint}
-          selectionColor={colors.primary}
+          selectionColor={colors.accentText}
+          cursorColor={colors.accentText}
           style={[styles.input, input.multiline && { minHeight: 88, textAlignVertical: 'top', paddingTop: space.md }]}
           {...input}
         />
@@ -214,8 +215,8 @@ export function Segmented<T extends string | number>({
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
             onPress={() => onChange(o.value)}
-            style={[styles.segment, active && { backgroundColor: colors.primary }]}>
-            <Txt variant="bodyBold" color={active ? colors.onPrimary : colors.textDim}>
+            style={[styles.segment, active && { backgroundColor: colors.accent }]}>
+            <Txt variant="smallBold" color={active ? colors.onAccent : colors.textDim}>
               {o.label}
             </Txt>
           </Pressable>
@@ -229,8 +230,8 @@ export function Chip({ label, active, onPress }: { label: string; active?: boole
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.chip, active && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
-      <Txt variant="small" color={active ? colors.onPrimary : colors.text}>
+      style={[styles.chip, active && { backgroundColor: colors.accent, borderColor: colors.accent }]}>
+      <Txt variant="small" color={active ? colors.onAccent : colors.text}>
         {label}
       </Txt>
     </Pressable>
@@ -240,10 +241,10 @@ export function Chip({ label, active, onPress }: { label: string; active?: boole
 export function Stat({ label, value, sub, color = colors.text }: { label: string; value: string; sub?: string; color?: string }) {
   return (
     <View style={{ flex: 1, gap: 2 }}>
-      <Txt variant="caption" color={colors.textDim}>
+      <Txt variant="label" color={colors.textDim}>
         {label}
       </Txt>
-      <Txt variant="h2" color={color}>
+      <Txt variant="display" color={color}>
         {value}
       </Txt>
       {sub ? (
@@ -257,10 +258,10 @@ export function Stat({ label, value, sub, color = colors.text }: { label: string
 
 export function Banner({ kind, children }: { kind: 'info' | 'ok' | 'warning' | 'danger'; children: ReactNode }) {
   const map = {
-    info: [colors.primaryDim, colors.primary, 'information-outline'],
+    info: [colors.surface2, colors.textDim, 'information-outline'],
     ok: [colors.successDim, colors.success, 'check-circle-outline'],
     warning: [colors.warningDim, colors.warning, 'alert-outline'],
-    danger: [colors.dangerDim, colors.danger, 'alert-octagon-outline'],
+    danger: [colors.accentDim, colors.accentText, 'alert-octagon-outline'],
   } as const;
   const [bg, fg, icon] = map[kind];
   return (
@@ -367,7 +368,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  input: { flex: 1, minHeight: TOUCH - 4, paddingHorizontal: space.md, color: colors.text, fontSize: 18 },
+  input: { flex: 1, minHeight: TOUCH - 4, paddingHorizontal: space.md, color: colors.text, fontSize: 18, fontFamily: fonts.medium },
   segmented: {
     flexDirection: 'row',
     backgroundColor: colors.surface2,
@@ -404,4 +405,64 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   empty: { alignItems: 'center', gap: space.md, padding: space.xxl },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    paddingLeft: space.lg,
+    paddingRight: space.sm,
+    minHeight: TOUCH + 8,
+  },
+  stepBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
+
+/** Selector numérico con botones grandes − / +. */
+export function Stepper({
+  label,
+  value,
+  onChange,
+  min = 0,
+  max = 99,
+  step = 1,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
+  return (
+    <View style={styles.stepper}>
+      <Txt variant="label" color={colors.textDim} style={{ flex: 1 }}>
+        {label}
+      </Txt>
+      <Pressable
+        accessibilityLabel={`Restar ${label}`}
+        disabled={value <= min}
+        onPress={() => onChange(Math.max(min, value - step))}
+        style={({ pressed }) => [styles.stepBtn, { opacity: value <= min ? 0.35 : pressed ? 0.7 : 1 }]}>
+        <Icon name="minus" size={26} />
+      </Pressable>
+      <Txt variant="display" style={{ minWidth: 48, textAlign: 'center' }}>
+        {String(value)}
+      </Txt>
+      <Pressable
+        accessibilityLabel={`Sumar ${label}`}
+        disabled={value >= max}
+        onPress={() => onChange(Math.min(max, value + step))}
+        style={({ pressed }) => [styles.stepBtn, { opacity: value >= max ? 0.35 : pressed ? 0.7 : 1 }]}>
+        <Icon name="plus" size={26} />
+      </Pressable>
+    </View>
+  );
+}

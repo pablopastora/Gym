@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router/js-tabs';
 import { View, type ColorValue } from 'react-native';
 
 import { Icon, IconButton, type IconName } from '@/ui/components';
-import { colors } from '@/ui/theme';
+import { colors, nav } from '@/ui/theme';
 
 function HeaderActions() {
   return (
@@ -23,15 +23,16 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: colors.surface },
+        headerStyle: nav.headerStyle,
         headerTintColor: colors.text,
-        headerTitleStyle: { fontWeight: '800' },
+        headerTitleStyle: nav.headerTitleStyle,
+        headerShadowVisible: false,
         headerRight: () => <HeaderActions />,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border, height: 68 },
+        tabBarStyle: nav.tabBarStyle,
         tabBarItemStyle: { paddingVertical: 6 },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textFaint,
+        tabBarLabelStyle: nav.tabBarLabelStyle,
+        tabBarActiveTintColor: nav.tabActive,
+        tabBarInactiveTintColor: nav.tabInactive,
       }}>
       <Tabs.Screen name="index" options={tab('Inicio', 'home-variant-outline')} />
       <Tabs.Screen name="entrenar" options={tab('Entrenar', 'dumbbell')} />

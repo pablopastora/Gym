@@ -32,7 +32,7 @@ export default function EjercicioDetalle() {
           headerRight: () => (
             <IconButton
               name={ex.isFavorite ? 'star' : 'star-outline'}
-              color={ex.isFavorite ? colors.warning : colors.text}
+              color={ex.isFavorite ? colors.accentText : colors.text}
               label={ex.isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
               onPress={toggleFav}
             />
@@ -104,7 +104,7 @@ export default function EjercicioDetalle() {
       <Card>
         {ex.instructions.map((step, i) => (
           <Row key={i} gap={space.md} style={{ alignItems: 'flex-start' }}>
-            <Txt variant="bodyBold" color={colors.primary}>
+            <Txt variant="bodyBold" color={colors.accentText}>
               {i + 1}
             </Txt>
             <Txt style={{ flex: 1 }}>{step}</Txt>

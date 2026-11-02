@@ -11,7 +11,7 @@ App Android personal (un solo usuario, sin cuentas) para registrar entrenamiento
 |---|---|---|
 | 1 | Benchmark y arquitectura | ✅ |
 | 2 | Proyecto, base de datos, migraciones, datos iniciales, navegación, perfil y objetivo | ✅ |
-| 3 | Sesión activa, temporizador de descanso, registro de series, editor de rutinas, cardio | ⏳ |
+| 3 | Sesión activa, temporizador de descanso, registro de series, editor de rutinas, cardio, rediseño negro/rojo | ✅ |
 | 4 | Doble progresión, récords, historial y gráficas por ejercicio, descarga | ⏳ |
 | 5 | Peso con media móvil, medidas, fotos y comparador, resumen semanal | ⏳ |
 | 6 | Biblioteca multimedia completa (~150 fichas en español, wger, caché de vídeo, ejercicios propios) | ⏳ |
@@ -33,7 +33,15 @@ npm start            # arranca Metro y muestra un QR
 1. Abre **Expo Go** en el Android y escanea el QR.
 2. Si el móvil no está en la misma red, usa `npx expo start --tunnel`.
 
-> Expo Go sirve para todo lo que hay hasta la fase 2. Desde la fase 3 (notificaciones del temporizador en segundo plano) conviene instalar el APK de desarrollo o el de *preview*.
+> **Expo Go** sirve para probar todo, incluido el aviso de fin de descanso (notificación local con vibración). Solo hay una diferencia: en el **APK** el aviso usa alarmas exactas y llega al segundo aunque el móvil lleve rato bloqueado; en Expo Go Android puede retrasarlo unos segundos en reposo profundo.
+
+## Diseño
+
+Todo el aspecto visual está en **`src/ui/theme.ts`**: colores, fuentes, estilos de texto, navegación y colores de las gráficas. Si cambias un valor allí, cambia en toda la app.
+
+- **Paleta:** fondo `#0A0A0A`, superficies `#141414` / `#1E1E1E`, rojo de acento `#E10600` y texto blanco/gris claro.
+- **Contraste:** el texto blanco sobre rojo tiene 5,0:1 (WCAG AA). Para el texto rojo sobre fondo oscuro se usa `#FF4D45`, porque el rojo puro no llega a 4,5:1. Lo comprueba `src/ui/__tests__/theme.test.ts`.
+- **Tipografía:** Bebas Neue para títulos y números grandes (peso, reps, temporizador) y Barlow para el texto, cargadas con `@expo-google-fonts`.
 
 ## Comprobaciones
 
@@ -67,7 +75,9 @@ src/domain/         lógica pura y testeada (IMC, media móvil, objetivo, 1RM, r
 src/data/           free-exercise-db.json, fichas curadas en español, rutina por defecto, etiquetas
 src/repositories/   acceso a datos
 src/hooks/          hooks de datos reactivos
-src/ui/             tema oscuro y componentes (botones grandes, campos, tarjetas…)
+src/ui/             theme.ts (único archivo de tema), componentes, sesión activa (session/)
+src/services/       notificaciones (fin de descanso)
+src/stores/         estado global: temporizador de descanso, selector de ejercicios
 drizzle/            SQL de migraciones generado por drizzle-kit
 scripts/            build-migrations.mjs, import-free-exercise-db.mjs
 ```

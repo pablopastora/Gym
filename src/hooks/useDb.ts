@@ -15,7 +15,11 @@ export function useProfile() {
  * Ejecuta una consulta asíncrona identificada por `key` y la repite cuando cambia la BD.
  * Para consultas relacionales o compuestas que `useLiveQuery` no cubre.
  */
-export function useAsyncQuery<T>(key: string, fn: () => Promise<T>): { data: T | undefined; reload: () => void } {
+export function useAsyncQuery<T>(
+  key: string,
+  fn: () => Promise<T>,
+  { live = true }: { live?: boolean } = {},
+): { data: T | undefined; reload: () => void } {
   const [data, setData] = useState<T>();
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -30,8 +34,9 @@ export function useAsyncQuery<T>(key: string, fn: () => Promise<T>): { data: T |
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, tick]);
   useEffect(() => {
+    if (!live) return;
     const sub = addDatabaseChangeListener(() => setTick((t) => t + 1));
     return () => sub.remove();
-  }, []);
+  }, [live]);
   return { data, reload: () => setTick((t) => t + 1) };
 }

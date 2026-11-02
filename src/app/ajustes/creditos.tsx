@@ -41,7 +41,7 @@ export default function Creditos() {
           </Txt>
           <Txt variant="small">{s.use}</Txt>
           {s.url ? (
-            <Txt variant="caption" color={colors.primary}>
+            <Txt variant="caption" color={colors.accentText}>
               {s.url}
             </Txt>
           ) : null}

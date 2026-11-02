@@ -1,6 +1,8 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { desc, gte } from 'drizzle-orm';
 import { router } from 'expo-router';
+import { useState } from 'react';
+import { Alert } from 'react-native';
 
 import { db } from '@/db/client';
 import { bodyWeight, workout } from '@/db/schema';
@@ -10,7 +12,10 @@ import { resolveRest } from '@/domain/exerciseClassify';
 import { fmtNum } from '@/domain/format';
 import { evaluateGoal, onTrack } from '@/domain/goals';
 import { estimateSessionMinutes } from '@/domain/session';
+import { useAsyncQuery } from '@/hooks/useDb';
 import { useTodaySession } from '@/hooks/useTodaySession';
+import { getActiveWorkout, startWorkoutFromDay } from '@/repositories/workouts';
+import { ensureNotificationPermission } from '@/services/notifications';
 import { Banner, BigButton, Card, Row, SectionTitle, Screen, Stat, Txt } from '@/ui/components';
 import { colors } from '@/ui/theme';
 
@@ -19,6 +24,8 @@ const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export default function Inicio() {
   const todayIso = toISODate();
   const { today, profile } = useTodaySession();
+  const { data: active } = useAsyncQuery('active-workout-home', () => getActiveWorkout(db));
+  const [starting, setStarting] = useState(false);
   const { data: weights } = useLiveQuery(
     db.select({ date: bodyWeight.date, weightKg: bodyWeight.weightKg }).from(bodyWeight).orderBy(desc(bodyWeight.date)).limit(60),
   );
@@ -27,6 +34,20 @@ export default function Inicio() {
   );
 
   if (!profile) return null;
+
+  const startToday = async () => {
+    if (!today) return;
+    setStarting(true);
+    try {
+      await ensureNotificationPermission();
+      await startWorkoutFromDay(db, today.id, profile);
+      router.push('/sesion');
+    } catch (e) {
+      Alert.alert('No se pudo empezar', (e as Error).message);
+    } finally {
+      setStarting(false);
+    }
+  };
 
   const trend = currentTrend(weights ?? [], todayIso);
   const currentKg = trend ?? weights?.[0]?.weightKg ?? profile.startWeightKg;
@@ -48,9 +69,17 @@ export default function Inicio() {
       <Txt variant="h1">{capitalize(formatDateLong(todayIso))}</Txt>
 
       <SectionTitle>Sesión de hoy</SectionTitle>
-      {today ? (
+      {active ? (
+        <Card style={{ borderColor: colors.accent, borderWidth: 1 }}>
+          <Txt variant="label" color={colors.accentText}>
+            Sesión en curso
+          </Txt>
+          <Txt variant="h2">{active.name}</Txt>
+          <BigButton title="Continuar" icon="play" onPress={() => router.push('/sesion')} />
+        </Card>
+      ) : today ? (
         <Card>
-          <Txt variant="h2">{today.name}</Txt>
+          <Txt variant="h1">{today.name}</Txt>
           <Txt color={colors.textDim}>
             {today.exercises.length} ejercicios · ~{estimateSessionMinutes(sessionExercises)} min
           </Txt>
@@ -58,11 +87,11 @@ export default function Inicio() {
             {today.exercises.map((e) => e.exercise.nameEs).join(' · ')}
           </Txt>
           {today.cardioNote ? (
-            <Txt variant="small" color={colors.warning}>
+            <Txt variant="small" color={colors.textDim}>
               {today.cardioNote}
             </Txt>
           ) : null}
-          <BigButton title="Empezar entrenamiento" icon="play" onPress={() => router.push('/entrenar')} />
+          <BigButton title="Empezar entrenamiento" icon="play" loading={starting} onPress={startToday} />
         </Card>
       ) : (
         <Card>
@@ -78,7 +107,7 @@ export default function Inicio() {
             label="Peso medio"
             value={week.avgKg != null ? `${fmtNum(week.avgKg)} kg` : '—'}
             sub={week.changeKg != null ? `${week.changeKg > 0 ? '+' : ''}${fmtNum(week.changeKg, 2)} kg vs. anterior` : 'Sin datos de la semana anterior'}
-            color={week.changeKg != null && week.changeKg < 0 ? colors.success : colors.text}
+            color={week.changeKg != null && week.changeKg < 0 ? colors.accentText : colors.text}
           />
         </Row>
         {track === 'en_ritmo' && <Banner kind="ok">Vas en ritmo hacia tu objetivo.</Banner>}

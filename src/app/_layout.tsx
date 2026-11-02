@@ -1,4 +1,5 @@
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
+import { useFonts } from 'expo-font';
 import { DarkTheme, ThemeProvider } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import * as SplashScreen from 'expo-splash-screen';
@@ -9,8 +10,10 @@ import { View } from 'react-native';
 import { db, initDb } from '@/db/client';
 import migrationBundle from '@/db/migrations';
 import { runSeed } from '@/db/seed';
+import { setupNotifications } from '@/services/notifications';
 import { Txt } from '@/ui/components';
-import { colors } from '@/ui/theme';
+import { RestTimerWatcher } from '@/ui/RestTimerWatcher';
+import { colors, fontAssets, fonts, nav } from '@/ui/theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -19,10 +22,17 @@ const navTheme = {
   colors: {
     ...DarkTheme.colors,
     background: colors.bg,
-    card: colors.surface,
+    card: colors.bg,
     border: colors.border,
-    primary: colors.primary,
+    primary: colors.accent,
     text: colors.text,
+    notification: colors.accent,
+  },
+  fonts: {
+    regular: { fontFamily: fonts.regular, fontWeight: 'normal' as const },
+    medium: { fontFamily: fonts.medium, fontWeight: 'normal' as const },
+    bold: { fontFamily: fonts.bold, fontWeight: 'normal' as const },
+    heavy: { fontFamily: fonts.bold, fontWeight: 'normal' as const },
   },
 };
 
@@ -39,15 +49,18 @@ function DbError({ error }: { error: Error }) {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
   const [opened, setOpened] = useState(false);
   const [openError, setOpenError] = useState<Error | null>(null);
   useEffect(() => {
     initDb()
       .then(() => setOpened(true))
       .catch((e: Error) => setOpenError(e));
+    setupNotifications().catch(() => {});
   }, []);
   if (openError) return <DbError error={openError} />;
-  if (!opened) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
+  // Si las fuentes fallan, seguimos con las del sistema en vez de bloquear la app.
+  if (!opened || (!fontsLoaded && !fontError)) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
   return <MigratedApp />;
 }
 
@@ -74,21 +87,28 @@ function MigratedApp() {
   return (
     <ThemeProvider value={navTheme}>
       <StatusBar style="light" />
+      <RestTimerWatcher />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: colors.surface },
+          headerStyle: nav.headerStyle,
           headerTintColor: colors.text,
-          headerTitleStyle: { fontWeight: '700' },
+          headerTitleStyle: nav.headerTitleStyle,
+          headerShadowVisible: false,
           contentStyle: { backgroundColor: colors.bg },
         }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="sesion/index" options={{ title: 'Entrenando', gestureEnabled: false }} />
+        <Stack.Screen name="sesion/resumen/[id]" options={{ title: 'Resumen' }} />
+        <Stack.Screen name="selector-ejercicio" options={{ title: 'Elegir ejercicio', presentation: 'modal' }} />
+        <Stack.Screen name="cardio/nuevo" options={{ title: 'Registrar cardio' }} />
         <Stack.Screen name="calendario" options={{ title: 'Calendario' }} />
         <Stack.Screen name="ajustes/index" options={{ title: 'Ajustes' }} />
         <Stack.Screen name="ajustes/perfil" options={{ title: 'Perfil y objetivo' }} />
         <Stack.Screen name="ajustes/entrenamiento" options={{ title: 'Entrenamiento' }} />
         <Stack.Screen name="ajustes/creditos" options={{ title: 'Créditos y licencias' }} />
         <Stack.Screen name="rutina/[id]" options={{ title: 'Rutina' }} />
-        <Stack.Screen name="ejercicio/[id]" options={{ title: 'Ejercicio' }} />
+        <Stack.Screen name="rutina/ejercicio/[id]" options={{ title: 'Ejercicio de la rutina' }} />
+        <Stack.Screen name="ejercicio/[id]" options={{ title: '' }} />
       </Stack>
     </ThemeProvider>
   );

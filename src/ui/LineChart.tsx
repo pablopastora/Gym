@@ -22,6 +22,8 @@ export interface ChartSeries {
   dots?: boolean;
   dashed?: boolean;
   strokeWidth?: number;
+  /** Dibujar la línea (false = solo puntos). */
+  line?: boolean;
 }
 
 /**
@@ -33,6 +35,7 @@ export function LineChart({
   height = 190,
   formatY = (v) => String(Math.round(v)),
   xLabels,
+  refLine,
   emptyText = 'Aún no hay datos suficientes',
 }: {
   series: ChartSeries[];
@@ -40,6 +43,8 @@ export function LineChart({
   formatY?: (v: number) => string;
   /** Etiquetas del eje X: [izquierda, derecha]. */
   xLabels?: [string, string];
+  /** Línea horizontal de referencia (p. ej. peso objetivo). */
+  refLine?: { y: number; label: string };
   emptyText?: string;
 }) {
   const [width, setWidth] = useState(0);
@@ -57,7 +62,7 @@ export function LineChart({
   }
 
   const xs = all.map((p) => p.x);
-  const ys = all.map((p) => p.y);
+  const ys = [...all.map((p) => p.y), ...(refLine ? [refLine.y] : [])];
   let minY = Math.min(...ys);
   let maxY = Math.max(...ys);
   const span = maxY - minY || Math.max(1, Math.abs(maxY) * 0.05);
@@ -102,7 +107,7 @@ export function LineChart({
                     fill="url(#area)"
                   />
                 ) : null}
-                <Path
+                {s.line === false ? null : <Path
                   d={d}
                   stroke={color}
                   strokeWidth={s.strokeWidth ?? 2.5}
@@ -110,7 +115,7 @@ export function LineChart({
                   strokeLinejoin="round"
                   strokeLinecap="round"
                   strokeDasharray={s.dashed ? '6,5' : undefined}
-                />
+                />}
                 {s.dots !== false
                   ? pts.map((p, i) => (
                       <Circle
@@ -127,6 +132,22 @@ export function LineChart({
               </G>
             );
           })}
+          {refLine ? (
+            <G>
+              <Line
+                x1={pad.l}
+                x2={width - pad.r}
+                y1={sy(refLine.y)}
+                y2={sy(refLine.y)}
+                stroke={chart.secondary}
+                strokeWidth={1.5}
+                strokeDasharray="6,5"
+              />
+              <SvgText x={width - pad.r} y={sy(refLine.y) - 5} fill={chart.label} fontSize={11} fontFamily={fonts.semibold} textAnchor="end">
+                {refLine.label}
+              </SvgText>
+            </G>
+          ) : null}
           {xLabels ? (
             <>
               <SvgText x={pad.l} y={height - 6} fill={chart.axis} fontSize={11} fontFamily={fonts.medium}>

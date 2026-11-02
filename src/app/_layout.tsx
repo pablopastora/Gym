@@ -111,6 +111,10 @@ function MigratedApp() {
         <Stack.Screen name="ejercicio/[id]" options={{ title: '' }} />
         <Stack.Screen name="ejercicio/historial/[id]" options={{ title: 'Historial' }} />
         <Stack.Screen name="records" options={{ title: 'Récords personales' }} />
+        <Stack.Screen name="cuerpo/peso" options={{ title: 'Peso' }} />
+        <Stack.Screen name="cuerpo/medidas" options={{ title: 'Medidas' }} />
+        <Stack.Screen name="cuerpo/fotos" options={{ title: 'Fotos de progreso' }} />
+        <Stack.Screen name="cuerpo/comparar" options={{ title: 'Comparar fotos' }} />
       </Stack>
     </ThemeProvider>
   );

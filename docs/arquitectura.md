@@ -40,6 +40,15 @@
 - **Récords**: peso máximo, 1RM estimado (Epley, ≤ 12 reps) y volumen por sesión. Se calculan al vuelo a partir del historial, así que borrar un entreno los corrige solos. La primera sesión de un ejercicio fija la base y no cuenta como récord. En la sesión se avisa en directo (trofeo en la serie, banner rojo y vibración).
 - **Gráficas**: `src/ui/LineChart.tsx` con react-native-svg y los colores `chart` del tema.
 
+## Notas de implementación (fase 5)
+
+- **Registro rápido de peso** (`src/ui/QuickWeight.tsx`, arriba en Inicio): viene rellenado con el último peso. Si no hay ninguno, usa el peso inicial del perfil. Un registro por fecha: guardar dos veces el mismo día lo sustituye.
+- **Gráficas**: peso diario como puntos grises y media móvil de 7 días como línea roja, con línea de objetivo y rangos de 1, 3, 6 meses o todo. Hay también una variante de IMC con la referencia en 25, y gráficas de perímetros (cintura por defecto).
+- **Medidas**: cada fecha combina lo que se registre ese día. Un campo vacío no borra un valor anterior.
+- **Fotos (decisión 5a)**: se guardan en `documentDirectory/progress-photos/`, privadas y fuera de la galería. Hay una por fecha y vista; si añades otra, sustituye a la anterior. El comparador permite elegir dos fechas cualquiera y cambiar entre frontal, lateral y espalda sin salir de la pantalla. Muestra la diferencia de peso (media de 7 días), de cintura y el tiempo transcurrido.
+- **Resumen semanal** (Inicio y Progreso): entrenos de la semana, racha, cardio, peso medio y variación, cintura en 4 semanas y si vas en ritmo.
+- **Racha**: semanas seguidas (de lunes a domingo) cumpliendo los días/semana del perfil. La semana en curso suma cuando se cumple y, mientras no se cumple, no rompe la racha.
+
 ---
 
 # Propuesta original (fase 0)

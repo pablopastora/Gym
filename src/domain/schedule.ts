@@ -23,3 +23,26 @@ export function nextRoutineDay<T extends DayRef>(
   const lastOrder = sorted[lastIdx].sortOrder;
   return pool.find((d) => d.sortOrder > lastOrder) ?? pool[0];
 }
+
+/**
+ * Racha en semanas (lunes-domingo) seguidas cumpliendo el objetivo de días.
+ * La semana en curso suma si ya se ha cumplido; si aún no, no rompe la racha.
+ */
+export function weekStreak(workoutDates: string[], today: string, target: number, startOfWeek: (d: string) => string, addDays: (d: string, n: number) => string): number {
+  const perWeek = new Map<string, Set<string>>();
+  for (const d of workoutDates) {
+    const w = startOfWeek(d);
+    const set = perWeek.get(w) ?? new Set<string>();
+    set.add(d);
+    perWeek.set(w, set);
+  }
+  const count = (w: string) => perWeek.get(w)?.size ?? 0;
+  let week = startOfWeek(today);
+  let streak = count(week) >= target ? 1 : 0;
+  week = addDays(week, -7);
+  while (count(week) >= target) {
+    streak++;
+    week = addDays(week, -7);
+  }
+  return streak;
+}

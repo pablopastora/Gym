@@ -13,7 +13,7 @@ App Android personal (un solo usuario, sin cuentas) para registrar entrenamiento
 | 2 | Proyecto, base de datos, migraciones, datos iniciales, navegación, perfil y objetivo | ✅ |
 | 3 | Sesión activa, temporizador de descanso, registro de series, editor de rutinas, cardio, rediseño negro/rojo | ✅ |
 | 4 | Doble progresión, récords, historial y gráficas por ejercicio, descarga | ✅ |
-| 5 | Peso con media móvil, medidas, fotos y comparador, resumen semanal | ⏳ |
+| 5 | Peso con media móvil, medidas, fotos y comparador, resumen semanal y racha | ✅ |
 | 6 | Biblioteca multimedia completa (~150 fichas en español, wger, caché de vídeo, ejercicios propios) | ⏳ |
 | 7 | Calendario, recordatorios, copia de seguridad (JSON/ZIP/CSV), pulido y APK final | ⏳ |
 

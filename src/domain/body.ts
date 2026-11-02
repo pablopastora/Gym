@@ -95,3 +95,123 @@ export function weeklySummary(entries: WeightEntry[], today: string): WeekSummar
     entries: cur.length,
   };
 }
+
+// ───────────── Gráfica de peso ─────────────
+
+export interface WeightChartData {
+  raw: { x: number; y: number }[];
+  trend: { x: number; y: number }[];
+  start: string | null;
+  end: string | null;
+}
+
+/** Puntos para la gráfica: x = días desde el primer registro del rango. */
+export function weightChartData(entries: WeightEntry[], fromDate: string | null): WeightChartData {
+  const all = movingAverage7(entries);
+  const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+  const inRange = sorted.filter((e) => !fromDate || e.date >= fromDate);
+  if (!inRange.length) return { raw: [], trend: [], start: null, end: null };
+  const start = inRange[0].date;
+  const x = (d: string) => diffDays(start, d);
+  return {
+    raw: inRange.map((e) => ({ x: x(e.date), y: e.weightKg })),
+    trend: all.filter((t) => t.date >= start).map((t) => ({ x: x(t.date), y: t.trendKg })),
+    start,
+    end: inRange[inRange.length - 1].date,
+  };
+}
+
+/** Tendencia (media 7 días) en una fecha concreta, usando los registros hasta ese día. */
+export function trendAt(entries: WeightEntry[], date: string): number | null {
+  return currentTrend(
+    entries.filter((e) => e.date <= date),
+    date,
+  ) ?? [...entries].filter((e) => e.date <= date).sort((a, b) => b.date.localeCompare(a.date))[0]?.weightKg ?? null;
+}
+
+/** Peso con el que rellenar el registro rápido: el de hoy si existe; si no, el último. */
+export function prefillWeight(entries: WeightEntry[], today: string): { value: number | null; isToday: boolean } {
+  const todayEntry = entries.find((e) => e.date === today);
+  if (todayEntry) return { value: todayEntry.weightKg, isToday: true };
+  const last = [...entries].filter((e) => e.date < today).sort((a, b) => b.date.localeCompare(a.date))[0];
+  return { value: last?.weightKg ?? null, isToday: false };
+}
+
+// ───────────── Medidas ─────────────
+
+export const MEASUREMENT_FIELDS = [
+  { key: 'waistCm', label: 'Cintura', unit: 'cm' },
+  { key: 'chestCm', label: 'Pecho', unit: 'cm' },
+  { key: 'armCm', label: 'Brazo', unit: 'cm' },
+  { key: 'thighCm', label: 'Muslo', unit: 'cm' },
+  { key: 'hipCm', label: 'Cadera', unit: 'cm' },
+  { key: 'bodyFatPct', label: '% grasa', unit: '%' },
+] as const;
+
+export type MeasurementKey = (typeof MEASUREMENT_FIELDS)[number]['key'];
+export type MeasurementRow = { date: string } & Partial<Record<MeasurementKey, number | null>>;
+
+/** Último valor de cada medida y su cambio respecto al primero registrado. */
+export function measurementSummary(rows: MeasurementRow[]) {
+  const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date));
+  const out = {} as Record<MeasurementKey, { last: number; lastDate: string; first: number; change: number } | null>;
+  for (const f of MEASUREMENT_FIELDS) {
+    const vals = sorted.filter((r) => r[f.key] != null);
+    if (!vals.length) {
+      out[f.key] = null;
+      continue;
+    }
+    const first = vals[0][f.key]!;
+    const last = vals[vals.length - 1][f.key]!;
+    out[f.key] = { last, lastDate: vals[vals.length - 1].date, first, change: last - first };
+  }
+  return out;
+}
+
+/** Valor de una medida en (o antes de) una fecha. */
+export function measurementAt(rows: MeasurementRow[], key: MeasurementKey, date: string): number | null {
+  const r = [...rows]
+    .filter((x) => x.date <= date && x[key] != null)
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  return r?.[key] ?? null;
+}
+
+// ───────────── Fotos ─────────────
+
+export type PhotoView = 'frontal' | 'lateral' | 'espalda';
+export const PHOTO_VIEWS: { value: PhotoView; label: string }[] = [
+  { value: 'frontal', label: 'Frontal' },
+  { value: 'lateral', label: 'Lateral' },
+  { value: 'espalda', label: 'Espalda' },
+];
+
+export interface PhotoLike {
+  id: number;
+  date: string;
+  view: PhotoView;
+  fileName: string;
+}
+
+export interface PhotoDay<P extends PhotoLike = PhotoLike> {
+  date: string;
+  views: Partial<Record<PhotoView, P>>;
+}
+
+/** Agrupa fotos por fecha (más reciente primero). Si hay varias de la misma vista y día, gana la última. */
+export function groupPhotosByDate<P extends PhotoLike>(photos: P[]): PhotoDay<P>[] {
+  const map = new Map<string, PhotoDay<P>>();
+  for (const p of [...photos].sort((a, b) => a.id - b.id)) {
+    const day = map.get(p.date) ?? { date: p.date, views: {} };
+    day.views[p.view] = p;
+    map.set(p.date, day);
+  }
+  return [...map.values()].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/** Fechas por defecto para comparar: la más antigua y la más reciente que tengan la vista. */
+export function defaultComparison(days: PhotoDay[], view: PhotoView): [string | null, string | null] {
+  const withView = days.filter((d) => d.views[view]).map((d) => d.date).sort();
+  const dates = withView.length >= 2 ? withView : days.map((d) => d.date).sort();
+  if (!dates.length) return [null, null];
+  return [dates[0], dates[dates.length - 1]];
+}

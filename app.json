@@ -52,6 +52,14 @@
           "icon": "./assets/images/android-icon-monochrome.png",
           "color": "#E10600"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Gym usa tus fotos para guardar fotos de progreso dentro de la app.",
+          "cameraPermission": "Gym usa la cámara para hacer fotos de progreso que se guardan solo dentro de la app.",
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {

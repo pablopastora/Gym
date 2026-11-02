@@ -41,7 +41,3 @@ example
 # generated native folders
 /ios
 /android
-
-# Proyectos nativos generados (Continuous Native Generation)
-/android
-/ios

@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { Image } from 'expo-image';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Linking, View } from 'react-native';
 
 import { exerciseImageUrl, youtubeSearchUrl } from '@/data/library';
@@ -59,6 +59,11 @@ export default function EjercicioDetalle() {
         </Row>
       ) : null}
 
+      <BigButton
+        title="Mi historial y gráficas"
+        icon="chart-line"
+        onPress={() => router.push({ pathname: '/ejercicio/historial/[id]', params: { id: ex.id } })}
+      />
       <BigButton
         title="Ver técnica en YouTube"
         icon="youtube"

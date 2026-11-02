@@ -46,6 +46,10 @@ export const profile = sqliteTable('profile', {
   effortMetric: text('effort_metric', { enum: ['rir', 'rpe', 'ninguno'] }).notNull().default('rir'),
   /** Peso de la barra olímpica para la calculadora de calentamiento. */
   barKg: real('bar_kg').notNull().default(20),
+  /** Semana de descarga en curso: activa hasta esta fecha (incluida). */
+  deloadUntil: text('deload_until'),
+  /** No volver a sugerir la descarga hasta esta fecha. */
+  deloadSnoozeUntil: text('deload_snooze_until'),
   updatedAt: integer('updated_at'),
 });
 
@@ -209,6 +213,10 @@ export const workoutExercise = sqliteTable(
     repMax: integer('rep_max'),
     restS: integer('rest_s'),
     targetWeightKg: real('target_weight_kg'),
+    /** Sugerencia de doble progresión calculada al empezar la sesión. */
+    progressionAction: text('progression_action').$type<ProgressionAction>(),
+    progressionDeltaKg: real('progression_delta_kg'),
+    progressionNote: text('progression_note'),
     notes: text('notes'),
     supersetGroup: integer('superset_group'),
   },
@@ -217,6 +225,15 @@ export const workoutExercise = sqliteTable(
     index('workout_exercise_exercise_idx').on(t.exerciseId),
   ],
 );
+
+export type ProgressionAction =
+  | 'primera_vez'
+  | 'subir'
+  | 'mantener'
+  | 'consolidar'
+  | 'estancado'
+  | 'lastre'
+  | 'descarga';
 
 export type SetType = 'calentamiento' | 'normal' | 'fallo' | 'drop';
 

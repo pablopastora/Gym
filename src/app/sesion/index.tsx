@@ -1,13 +1,15 @@
 import * as Haptics from 'expo-haptics';
-import { useKeepAwake } from 'expo-keep-awake';
 import { router, Stack } from 'expo-router';
-import { Alert, KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native';
 
 import { db } from '@/db/client';
 import { formatDateLong } from '@/domain/dates';
 import { fmtDuration, fmtNum } from '@/domain/format';
+import { setBeatsRecord, sessionBests } from '@/domain/records';
 import { useAsyncQuery, useProfile } from '@/hooks/useDb';
 import { useNow } from '@/hooks/useNow';
+import { useScreenAwake } from '@/hooks/useScreenAwake';
 import {
   addExerciseToWorkout,
   completeSet,
@@ -21,13 +23,15 @@ import {
   workoutDetailQuery,
   type WorkoutDetail,
 } from '@/repositories/workouts';
+import { getPreviousBests } from '@/repositories/progress';
 import { pickExercise } from '@/stores/picker';
 import { useRestTimer } from '@/stores/restTimer';
-import { BigButton, EmptyState, Screen, Txt } from '@/ui/components';
+import { BigButton, EmptyState, Icon, Screen, Txt } from '@/ui/components';
 import { ExerciseCard } from '@/ui/session/ExerciseCard';
 import { RestTimerBar } from '@/ui/session/RestTimerBar';
 import type { SetValues } from '@/ui/session/SetRow';
-import { colors, space } from '@/ui/theme';
+import { colors, radius, space } from '@/ui/theme';
+import { showAlert } from '@/ui/alert';
 
 function Stopwatch({ startedAt }: { startedAt: number }) {
   const now = useNow(1000);
@@ -46,7 +50,7 @@ function nextSetLabel(w: WorkoutDetail, afterSetId: number): string {
 }
 
 export default function Sesion() {
-  useKeepAwake();
+  useScreenAwake();
   const profile = useProfile();
   const startRest = useRestTimer((s) => s.start);
   const skipRest = useRestTimer((s) => s.skip);
@@ -67,6 +71,18 @@ export default function Sesion() {
     },
     { live: false },
   );
+  const { data: bestsMap } = useAsyncQuery(
+    `bests-${w?.id}-${exerciseKey}`,
+    async (): Promise<Awaited<ReturnType<typeof getPreviousBests>>> =>
+      w ? getPreviousBests(db, [...new Set(w.exercises.map((e) => e.exerciseId))], w.id) : {},
+    { live: false },
+  );
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   if (w === undefined || !profile) return null;
   if (w === null) {
@@ -84,10 +100,28 @@ export default function Sesion() {
       return;
     }
     if (v.reps == null || v.reps <= 0) {
-      Alert.alert('Faltan repeticiones', 'Introduce las repeticiones de la serie antes de completarla.');
+      showAlert('Faltan repeticiones', 'Introduce las repeticiones de la serie antes de completarla.');
       return;
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    const s0 = we.sets.find((x) => x.id === setId);
+    const prev = bestsMap?.[we.exerciseId];
+    const before = sessionBests(we.sets.filter((x) => x.completed && x.id !== setId));
+    const ref = prev
+      ? {
+          maxWeight: Math.max(prev.maxWeight ?? 0, before.maxWeight ?? 0) || null,
+          bestE1rm: Math.max(prev.bestE1rm ?? 0, before.bestE1rm ?? 0) || null,
+        }
+      : null;
+    const beaten = s0?.setType === 'calentamiento' ? [] : setBeatsRecord(v, ref);
+    if (beaten.length) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      setToast(
+        `¡Nuevo récord! ${we.exercise.nameEs}: ${v.weightKg != null ? `${fmtNum(v.weightKg, 2)} kg × ` : '× '}${v.reps}` +
+          (beaten.includes('peso_max') ? ' (peso máximo)' : ' (mejor 1RM estimado)'),
+      );
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    }
     await completeSet(db, setId, v);
     const s = we.sets.find((x) => x.id === setId);
     const rest = s?.setType === 'calentamiento' ? Math.min(WARMUP_REST_S, we.restS ?? WARMUP_REST_S) : (we.restS ?? profile.restAccessoryS);
@@ -111,14 +145,14 @@ export default function Sesion() {
 
   const onFinish = () => {
     if (completed === 0) {
-      Alert.alert('Sin series completadas', 'No has completado ninguna serie. ¿Quieres descartar el entreno?', [
+      showAlert('Sin series completadas', 'No has completado ninguna serie. ¿Quieres descartar el entreno?', [
         { text: 'Seguir entrenando', style: 'cancel' },
         { text: 'Descartar', style: 'destructive', onPress: onDiscardConfirmed },
       ]);
       return;
     }
     const pending = allSets.length - completed;
-    Alert.alert(
+    showAlert(
       'Terminar entreno',
       pending > 0 ? `Hay ${pending} series sin completar; no se guardarán.` : '¡Buen trabajo! ¿Guardar el entreno?',
       [
@@ -135,7 +169,7 @@ export default function Sesion() {
   };
 
   const onDiscard = () =>
-    Alert.alert('Descartar entreno', 'Se borrará esta sesión y todas sus series. No se puede deshacer.', [
+    showAlert('Descartar entreno', 'Se borrará esta sesión y todas sus series. No se puede deshacer.', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Descartar', style: 'destructive', onPress: onDiscardConfirmed },
     ]);
@@ -177,6 +211,7 @@ export default function Sesion() {
               we={we}
               workoutId={w.id}
               last={lastMap?.[we.exerciseId]}
+              bests={bestsMap?.[we.exerciseId]}
               effort={profile.effortMetric}
               isFirst={i === 0}
               isLast={i === w.exercises.length - 1}
@@ -194,6 +229,28 @@ export default function Sesion() {
           <BigButton title="Descartar entreno" icon="delete-outline" kind="ghost" onPress={onDiscard} />
         </ScrollView>
       </KeyboardAvoidingView>
+      {toast ? (
+        <View
+          pointerEvents="none"
+          accessibilityLiveRegion="assertive"
+          style={{
+            position: 'absolute',
+            top: space.sm,
+            left: space.md,
+            right: space.md,
+            backgroundColor: colors.accent,
+            borderRadius: radius.md,
+            padding: space.md,
+            flexDirection: 'row',
+            gap: space.sm,
+            alignItems: 'center',
+          }}>
+          <Icon name="trophy" color={colors.onAccent} />
+          <Txt variant="bodyBold" color={colors.onAccent} style={{ flex: 1 }}>
+            {toast}
+          </Txt>
+        </View>
+      ) : null}
       <RestTimerBar />
     </View>
   );

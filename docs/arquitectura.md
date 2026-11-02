@@ -27,6 +27,19 @@
 - **Descanso**: el de la serie de trabajo es el del ejercicio en la rutina (si no hay, el del ejercicio y luego el del tipo); tras un calentamiento son 60 s.
 - **Tema** centralizado en `src/ui/theme.ts`, con tests de contraste WCAG.
 
+## Notas de implementación (fase 4)
+
+- **Progresión** (`src/domain/progression.ts`, funciones puras con tests):
+  - Se calcula al empezar la sesión a partir de las últimas 8 sesiones del ejercicio, sin contar las de descarga.
+  - **Peso de trabajo**: el peso más repetido en las series de trabajo. Los calentamientos y drop sets no cuentan.
+  - **Subir**: todas las series previstas en el techo del rango. Opción 4a: las series ya salen con el peso nuevo, las reps al mínimo y los calentamientos recalculados, y la tarjeta muestra «↑ +2,5 kg».
+  - **Modo déficit**: si la pierna llegó al techo al límite (RIR 0, RPE ≥ 9,5 o serie al fallo), sube el incremento pequeño. Nunca hay dos subidas seguidas: la sesión siguiente a una subida se consolida.
+  - **Mantener**: si no llegas al techo o fallas el mínimo, el peso **no baja**.
+  - **Estancado**: tras 3 sesiones seguidas sin progreso (ni más peso, ni más reps al mismo peso, ni techo) se sugiere bajar un 10 % o cambiar de ejercicio. Solo se aplica si pulsas el botón.
+- **Descarga**: se sugiere a las 6 semanas, se recomienda a las 8, y también se sugiere antes por fatiga (≥ 30 % de los ejercicios recientes con 2+ sesiones sin progreso, o RIR medio ≈ 0 en la semana). Dura 7 días con la mitad de series y el mismo peso. Se puede posponer una semana.
+- **Récords**: peso máximo, 1RM estimado (Epley, ≤ 12 reps) y volumen por sesión. Se calculan al vuelo a partir del historial, así que borrar un entreno los corrige solos. La primera sesión de un ejercicio fija la base y no cuenta como récord. En la sesión se avisa en directo (trofeo en la serie, banner rojo y vibración).
+- **Gráficas**: `src/ui/LineChart.tsx` con react-native-svg y los colores `chart` del tema.
+
 ---
 
 # Propuesta original (fase 0)

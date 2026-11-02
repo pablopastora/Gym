@@ -109,6 +109,8 @@ function MigratedApp() {
         <Stack.Screen name="rutina/[id]" options={{ title: 'Rutina' }} />
         <Stack.Screen name="rutina/ejercicio/[id]" options={{ title: 'Ejercicio de la rutina' }} />
         <Stack.Screen name="ejercicio/[id]" options={{ title: '' }} />
+        <Stack.Screen name="ejercicio/historial/[id]" options={{ title: 'Historial' }} />
+        <Stack.Screen name="records" options={{ title: 'Récords personales' }} />
       </Stack>
     </ThemeProvider>
   );

@@ -14,12 +14,23 @@ import {
 import type { AppDb } from '@/db/types';
 import { toISODate } from '@/domain/dates';
 import { resolveRest } from '@/domain/exerciseClassify';
-import { moveItem, planExerciseSets, type LastSet } from '@/domain/workout';
+import { deloadSets, suggestProgression, type Suggestion } from '@/domain/progression';
+import { moveItem, planExerciseSets, roundTo, type LastSet, type PlannedSet } from '@/domain/workout';
+
+import { getExerciseHistory } from './progress';
 
 /** Descanso tras una serie de calentamiento (s). */
 export const WARMUP_REST_S = 60;
 
-type RestProfile = Pick<Profile, 'restCompoundS' | 'restAccessoryS' | 'restAbsS' | 'barKg'>;
+type RestProfile = Pick<
+  Profile,
+  'restCompoundS' | 'restAccessoryS' | 'restAbsS' | 'barKg' | 'incrementUpperKg' | 'incrementLowerKg' | 'deficitMode' | 'deloadUntil'
+>;
+
+/** ¿La sesión que empieza hoy es de descarga? */
+export function isDeloadDay(profile: Pick<Profile, 'deloadUntil'>, today: string) {
+  return profile.deloadUntil != null && profile.deloadUntil >= today;
+}
 
 export async function getActiveWorkout(db: AppDb) {
   const rows = await db
@@ -85,11 +96,28 @@ async function insertPlannedExercise(
     restS: number | null;
     notes: string | null;
     profile: RestProfile;
+    deload: boolean;
   },
 ) {
-  const { workoutId, ex, profile } = params;
+  const { workoutId, ex, profile, deload } = params;
   const last = await getLastPerformance(db, ex.id, workoutId);
-  const plan = planExerciseSets({ sets: params.sets, warmupSets: params.warmupSets }, last?.sets ?? null, warmupOpts(ex, profile));
+  const history = (await getExerciseHistory(db, ex.id, { excludeWorkoutId: workoutId })).slice(-8);
+  const suggestion = suggestProgression(history, {
+    sets: params.sets,
+    repMin: params.repMin,
+    repMax: params.repMax,
+    region: ex.bodyRegion,
+    incUpper: profile.incrementUpperKg,
+    incLower: profile.incrementLowerKg,
+    deficitMode: profile.deficitMode,
+  });
+  const nSets = deload ? deloadSets(params.sets) : params.sets;
+  const plan = applySuggestion(
+    planExerciseSets({ sets: nSets, warmupSets: params.warmupSets }, last?.sets ?? null, warmupOpts(ex, profile)),
+    deload ? null : suggestion,
+    warmupOpts(ex, profile),
+    params.warmupSets,
+  );
   const [we] = await db
     .insert(workoutExercise)
     .values({
@@ -100,12 +128,38 @@ async function insertPlannedExercise(
       repMax: params.repMax,
       restS: resolveRest(ex.kind, profile, ex.defaultRestS, params.restS),
       notes: params.notes,
+      targetWeightKg: deload ? (suggestion.weightKg ?? null) : suggestion.weightKg,
+      progressionAction: deload ? 'descarga' : suggestion.action,
+      progressionDeltaKg: deload ? 0 : suggestion.deltaKg,
+      progressionNote: deload
+        ? 'Semana de descarga: la mitad de series, mismo peso y sin ir al fallo (deja 3 reps en reserva).'
+        : suggestion.note,
     })
     .returning({ id: workoutExercise.id });
   await db.insert(workoutSet).values(
     plan.map((s, i) => ({ workoutExerciseId: we.id, sortOrder: i, setType: s.setType, weightKg: s.weightKg, reps: s.reps })),
   );
   return we.id;
+}
+
+/**
+ * Opción acordada: al subir, las series de trabajo YA salen con el peso nuevo
+ * y las reps en el mínimo del rango. En el resto de casos se mantiene la última vez.
+ */
+export function applySuggestion(
+  plan: PlannedSet[],
+  suggestion: Suggestion | null,
+  warmup: { minKg: number; step: number },
+  warmupSets: number,
+): PlannedSet[] {
+  if (!suggestion || suggestion.action !== 'subir' || suggestion.weightKg == null) return plan;
+  const working = plan
+    .filter((s) => s.setType !== 'calentamiento')
+    .map((s) => ({ ...s, weightKg: suggestion.weightKg, reps: suggestion.reps ?? s.reps }));
+  const warm = planExerciseSets({ sets: 1, warmupSets }, [{ weightKg: suggestion.weightKg, reps: null }], warmup).filter(
+    (s) => s.setType === 'calentamiento',
+  );
+  return [...warm, ...working];
 }
 
 /** Crea la sesión a partir de un día de rutina, con los datos de la última vez ya rellenados. */
@@ -115,9 +169,11 @@ export async function startWorkoutFromDay(db: AppDb, dayId: number, profile: Res
     with: { exercises: { orderBy: asc(routineExercise.sortOrder), with: { exercise: true } } },
   });
   if (!day) throw new Error('Día de rutina no encontrado');
+  const date = toISODate(new Date(now));
+  const deload = isDeloadDay(profile, date);
   const [w] = await db
     .insert(workout)
-    .values({ startedAt: now, date: toISODate(new Date(now)), routineDayId: day.id, name: day.name })
+    .values({ startedAt: now, date, routineDayId: day.id, name: deload ? `${day.name} (descarga)` : day.name, isDeload: deload })
     .returning({ id: workout.id });
   for (const [i, re] of day.exercises.entries()) {
     await insertPlannedExercise(db, {
@@ -131,21 +187,23 @@ export async function startWorkoutFromDay(db: AppDb, dayId: number, profile: Res
       restS: re.restS,
       notes: re.notes,
       profile,
+      deload,
     });
   }
   return w.id;
 }
 
-export async function startEmptyWorkout(db: AppDb, now = Date.now(), name = 'Entreno libre') {
+export async function startEmptyWorkout(db: AppDb, now = Date.now(), name = 'Entreno libre', deload = false) {
   const [w] = await db
     .insert(workout)
-    .values({ startedAt: now, date: toISODate(new Date(now)), name })
+    .values({ startedAt: now, date: toISODate(new Date(now)), name, isDeload: deload })
     .returning({ id: workout.id });
   return w.id;
 }
 
 export async function addExerciseToWorkout(db: AppDb, workoutId: number, exerciseId: string, profile: RestProfile) {
   const [ex] = await db.select().from(exercise).where(eq(exercise.id, exerciseId));
+  const [w] = await db.select({ isDeload: workout.isDeload }).from(workout).where(eq(workout.id, workoutId));
   const existing = await db
     .select({ id: workoutExercise.id })
     .from(workoutExercise)
@@ -161,6 +219,7 @@ export async function addExerciseToWorkout(db: AppDb, workoutId: number, exercis
     restS: null,
     notes: null,
     profile,
+    deload: !!w?.isDeload,
   });
 }
 
@@ -170,7 +229,14 @@ export async function substituteWorkoutExercise(db: AppDb, weId: number, newExer
   const [ex] = await db.select().from(exercise).where(eq(exercise.id, newExerciseId));
   await db
     .update(workoutExercise)
-    .set({ exerciseId: ex.id, restS: resolveRest(ex.kind, profile, ex.defaultRestS) })
+    .set({
+      exerciseId: ex.id,
+      restS: resolveRest(ex.kind, profile, ex.defaultRestS),
+      progressionAction: null,
+      progressionDeltaKg: null,
+      progressionNote: null,
+      targetWeightKg: null,
+    })
     .where(eq(workoutExercise.id, weId));
   const last = await getLastPerformance(db, ex.id, we.workoutId);
   const pending = await db
@@ -317,4 +383,23 @@ export function recentWorkoutsQuery(db: AppDb, limit = 20) {
     limit,
     with: { exercises: { with: { sets: true } } },
   });
+}
+
+/** Aplica el −10 % sugerido al estancarse a las series de trabajo pendientes. */
+export async function applyWeightDrop(db: AppDb, weId: number, pct = 0.1) {
+  const pending = await db
+    .select()
+    .from(workoutSet)
+    .where(and(eq(workoutSet.workoutExerciseId, weId), eq(workoutSet.completed, false), ne(workoutSet.setType, 'calentamiento')));
+  for (const s of pending) {
+    if (s.weightKg == null) continue;
+    await db
+      .update(workoutSet)
+      .set({ weightKg: Math.max(0, roundTo(s.weightKg * (1 - pct), 2.5)) })
+      .where(eq(workoutSet.id, s.id));
+  }
+  await db
+    .update(workoutExercise)
+    .set({ progressionAction: 'mantener', progressionNote: 'Peso reducido un 10 % tras el estancamiento. A partir de aquí, vuelve a progresar.' })
+    .where(eq(workoutExercise.id, weId));
 }

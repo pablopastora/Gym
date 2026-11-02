@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
 import { db } from '@/db/client';
 import type { Profile, RoutineExercise } from '@/db/schema';
@@ -11,6 +11,7 @@ import { deleteRoutineExercise, routineExerciseQuery, updateRoutineExercise } fr
 import { pickExercise } from '@/stores/picker';
 import { BigButton, Chip, Field, Row, SectionTitle, Screen, Stepper, Txt } from '@/ui/components';
 import { colors, space } from '@/ui/theme';
+import { showAlert } from '@/ui/alert';
 
 const REST_PRESETS = [45, 60, 75, 90, 120, 150, 180, 240];
 
@@ -92,7 +93,7 @@ function Editor({ re, profile }: { re: Loaded; profile: Profile }) {
         icon="delete-outline"
         kind="ghost"
         onPress={() =>
-          Alert.alert('Quitar ejercicio', `¿Quitar «${re.exercise.nameEs}» de ${re.day.name}?`, [
+          showAlert('Quitar ejercicio', `¿Quitar «${re.exercise.nameEs}» de ${re.day.name}?`, [
             { text: 'Cancelar', style: 'cancel' },
             {
               text: 'Quitar',

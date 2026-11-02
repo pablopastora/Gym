@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
 import { db } from '@/db/client';
 import { formatDateLong } from '@/domain/dates';
@@ -15,6 +15,7 @@ import { getActiveWorkout, recentWorkoutsQuery, startEmptyWorkout, startWorkoutF
 import { ensureNotificationPermission } from '@/services/notifications';
 import { BigButton, Card, EmptyState, ListRow, Row, SectionTitle, Screen, Txt } from '@/ui/components';
 import { colors, radius, space } from '@/ui/theme';
+import { showAlert } from '@/ui/alert';
 
 export default function Entrenar() {
   const { routine, today, profile } = useTodaySession();
@@ -37,7 +38,7 @@ export default function Entrenar() {
       else await startWorkoutFromDay(db, dayId, profile);
       router.push('/sesion');
     } catch (e) {
-      Alert.alert('No se pudo empezar', (e as Error).message);
+      showAlert('No se pudo empezar', (e as Error).message);
     } finally {
       setStarting(null);
     }
@@ -138,7 +139,7 @@ export default function Entrenar() {
                   .filter(Boolean)
                   .join(' · ')}
                 onPress={() =>
-                  Alert.alert('Borrar cardio', '¿Borrar este registro de cardio?', [
+                  showAlert('Borrar cardio', '¿Borrar este registro de cardio?', [
                     { text: 'Cancelar', style: 'cancel' },
                     { text: 'Borrar', style: 'destructive', onPress: () => deleteCardio(db, c.id) },
                   ])

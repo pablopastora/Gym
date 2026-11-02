@@ -2,7 +2,6 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { desc, gte } from 'drizzle-orm';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert } from 'react-native';
 
 import { db } from '@/db/client';
 import { bodyWeight, workout } from '@/db/schema';
@@ -17,7 +16,9 @@ import { useTodaySession } from '@/hooks/useTodaySession';
 import { getActiveWorkout, startWorkoutFromDay } from '@/repositories/workouts';
 import { ensureNotificationPermission } from '@/services/notifications';
 import { Banner, BigButton, Card, Row, SectionTitle, Screen, Stat, Txt } from '@/ui/components';
+import { DeloadCard } from '@/ui/DeloadCard';
 import { colors } from '@/ui/theme';
+import { showAlert } from '@/ui/alert';
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -43,7 +44,7 @@ export default function Inicio() {
       await startWorkoutFromDay(db, today.id, profile);
       router.push('/sesion');
     } catch (e) {
-      Alert.alert('No se pudo empezar', (e as Error).message);
+      showAlert('No se pudo empezar', (e as Error).message);
     } finally {
       setStarting(false);
     }
@@ -98,6 +99,8 @@ export default function Inicio() {
           <Txt color={colors.textDim}>No hay ninguna rutina activa. Actívala en la pestaña Rutinas.</Txt>
         </Card>
       )}
+
+      <DeloadCard />
 
       <SectionTitle>Esta semana</SectionTitle>
       <Card>

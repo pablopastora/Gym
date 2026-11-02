@@ -59,6 +59,7 @@ export const chart = {
   axis: colors.textFaint,
   label: colors.textDim,
   record: colors.accentText,
+  recordStroke: colors.text,
 } as const;
 
 /** Fuentes que se cargan al arrancar (layout raíz). */

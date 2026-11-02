@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { db } from '@/db/client';
 import { resolveRest } from '@/domain/exerciseClassify';
@@ -24,6 +24,7 @@ import { pickExercise } from '@/stores/picker';
 import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
 import { BigButton, Banner, Icon, IconButton, Screen, Txt } from '@/ui/components';
 import { colors, fonts, radius, space } from '@/ui/theme';
+import { showAlert } from '@/ui/alert';
 
 type Day = RoutineWithDays['days'][number];
 
@@ -52,7 +53,7 @@ export default function RutinaEditor() {
       icon: 'delete-outline',
       destructive: true,
       onPress: () =>
-        Alert.alert('Eliminar rutina', `¿Eliminar «${r.name}»? El historial de entrenos se conserva.`, [
+        showAlert('Eliminar rutina', `¿Eliminar «${r.name}»? El historial de entrenos se conserva.`, [
           { text: 'Cancelar', style: 'cancel' },
           {
             text: 'Eliminar',
@@ -131,7 +132,7 @@ function DayBlock({
       icon: 'delete-outline',
       destructive: true,
       onPress: () =>
-        Alert.alert('Eliminar día', `¿Eliminar «${day.name}» y sus ejercicios?`, [
+        showAlert('Eliminar día', `¿Eliminar «${day.name}» y sus ejercicios?`, [
           { text: 'Cancelar', style: 'cancel' },
           { text: 'Eliminar', style: 'destructive', onPress: () => deleteDay(db, day.id) },
         ]),

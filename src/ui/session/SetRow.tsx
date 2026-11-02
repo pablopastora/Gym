@@ -32,6 +32,7 @@ export function SetRow({
   prev,
   effort,
   repHint,
+  isRecord,
   onLabelPress,
   onCommit,
   onToggle,
@@ -41,6 +42,8 @@ export function SetRow({
   prev?: LastSet;
   effort: EffortMetric;
   repHint?: string;
+  /** La serie completada bate un récord personal. */
+  isRecord?: boolean;
   onLabelPress: () => void;
   onCommit: (v: Partial<SetValues>) => void;
   onToggle: (v: SetValues) => void;
@@ -79,9 +82,13 @@ export function SetRow({
   return (
     <View style={[styles.row, done && styles.rowDone]}>
       <Pressable onPress={onLabelPress} hitSlop={6} style={styles.labelCell} accessibilityLabel={`Opciones de la serie ${label}`}>
-        <Txt variant="displayS" color={warm ? colors.warning : set.setType === 'normal' ? colors.text : colors.accentText}>
-          {label}
-        </Txt>
+        {isRecord && done ? (
+          <MaterialCommunityIcons name="trophy" size={24} color={colors.accentText} accessibilityLabel="Récord personal" />
+        ) : (
+          <Txt variant="displayS" color={warm ? colors.warning : set.setType === 'normal' ? colors.text : colors.accentText}>
+            {label}
+          </Txt>
+        )}
       </Pressable>
       <Txt variant="small" color={colors.textFaint} style={styles.prev} numberOfLines={1}>
         {prevText}

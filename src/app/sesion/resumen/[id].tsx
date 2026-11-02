@@ -1,19 +1,23 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
 import { db } from '@/db/client';
 import { formatDateLong } from '@/domain/dates';
 import { fmtDuration, fmtNum } from '@/domain/format';
+import { RECORD_LABELS } from '@/domain/records';
 import { formatSets, summarizeSets } from '@/domain/workout';
 import { useAsyncQuery } from '@/hooks/useDb';
+import { recordsInWorkout } from '@/repositories/progress';
 import { discardWorkout, updateWorkoutNotes, workoutDetailQuery } from '@/repositories/workouts';
-import { BigButton, Card, Field, Row, SectionTitle, Screen, Stat, Txt } from '@/ui/components';
+import { BigButton, Card, Field, Icon, Row, SectionTitle, Screen, Stat, Txt } from '@/ui/components';
 import { colors, space } from '@/ui/theme';
+import { showAlert } from '@/ui/alert';
 
 export default function Resumen() {
   const { id, nuevo } = useLocalSearchParams<{ id: string; nuevo?: string }>();
   const { data: w } = useAsyncQuery(`workout-${id}`, () => workoutDetailQuery(db, Number(id)));
+  const { data: recs } = useAsyncQuery(`records-${id}`, () => recordsInWorkout(db, Number(id)));
   const [notes, setNotes] = useState<string | null>(null);
   if (!w) return null;
 
@@ -38,16 +42,34 @@ export default function Resumen() {
           <Stat label="Repeticiones" value={String(sum.reps)} />
         </Row>
       </Card>
-      <Txt variant="small" color={colors.textFaint}>
-        Los récords personales y las sugerencias de progresión aparecerán aquí a partir de la fase 4.
-      </Txt>
+      {recs?.length ? (
+        <Card style={{ backgroundColor: colors.accentDim, borderColor: colors.accent }}>
+          <Row gap={space.sm}>
+            <Icon name="trophy" color={colors.accentText} size={28} />
+            <Txt variant="h2">{recs.length === 1 ? '¡1 récord personal!' : `¡${recs.length} récords personales!`}</Txt>
+          </Row>
+          {recs.map((r) => {
+            const we = w.exercises.find((e) => e.exerciseId === r.exerciseId);
+            return (
+              <Txt key={r.exerciseId}>
+                {`${we?.exercise.nameEs ?? r.exerciseId}: ${r.types.map((t) => RECORD_LABELS[t].toLowerCase()).join(', ')}`}
+              </Txt>
+            );
+          })}
+        </Card>
+      ) : null}
 
       <SectionTitle>Ejercicios</SectionTitle>
       {w.exercises.map((we) => {
         const working = we.sets.filter((s) => s.setType !== 'calentamiento' && s.completed);
         return (
-          <Card key={we.id}>
-            <Txt variant="h3">{we.exercise.nameEs}</Txt>
+          <Card key={we.id} onPress={() => router.push({ pathname: '/ejercicio/historial/[id]', params: { id: we.exerciseId } })}>
+            <Row style={{ justifyContent: 'space-between' }}>
+              <Txt variant="h3" style={{ flex: 1 }}>
+                {we.exercise.nameEs}
+              </Txt>
+              {recs?.some((r) => r.exerciseId === we.exerciseId) ? <Icon name="trophy" color={colors.accentText} size={20} /> : null}
+            </Row>
             <Txt color={colors.textDim}>{working.length ? formatSets(working) : 'Solo calentamiento'}</Txt>
             {we.notes ? (
               <Txt variant="small" color={colors.warning}>
@@ -75,7 +97,7 @@ export default function Resumen() {
           kind="ghost"
           icon="delete-outline"
           onPress={() =>
-            Alert.alert('Borrar entreno', 'Se borrará del historial. No se puede deshacer.', [
+            showAlert('Borrar entreno', 'Se borrará del historial. No se puede deshacer.', [
               { text: 'Cancelar', style: 'cancel' },
               {
                 text: 'Borrar',

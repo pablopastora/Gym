@@ -1,14 +1,17 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { db } from '@/db/client';
 import type { SetType } from '@/db/schema';
 import { fmtRest } from '@/domain/session';
-import { formatSets, type LastSet } from '@/domain/workout';
+import { fmtNum } from '@/domain/format';
+import { setBeatsRecord, sessionBests } from '@/domain/records';
+import { formatSets, roundTo, type LastSet } from '@/domain/workout';
 import type { LastPerformance, WorkoutDetail } from '@/repositories/workouts';
 import {
   addSet,
+  applyWeightDrop,
   deleteSet,
   moveWorkoutExercise,
   removeWorkoutExercise,
@@ -21,6 +24,7 @@ import { Icon, IconButton, Txt } from '../components';
 import { colors, fonts, radius, space } from '../theme';
 
 import { COLS, SetRow, type EffortMetric, type SetValues } from './SetRow';
+import { showAlert } from '@/ui/alert';
 
 type WE = WorkoutDetail['exercises'][number];
 
@@ -35,6 +39,7 @@ export function ExerciseCard({
   we,
   workoutId,
   last,
+  bests,
   effort,
   isFirst,
   isLast,
@@ -44,6 +49,8 @@ export function ExerciseCard({
   we: WE;
   workoutId: number;
   last: LastPerformance | null | undefined;
+  /** Mejores marcas previas a esta sesión (para marcar récords). */
+  bests: { maxWeight: number | null; bestE1rm: number | null } | null | undefined;
   effort: EffortMetric;
   isFirst: boolean;
   isLast: boolean;
@@ -68,6 +75,19 @@ export function ExerciseCard({
     return last.sets[Math.min(wi, last.sets.length - 1)];
   });
 
+  // Récords: cada serie se compara con lo mejor previo + lo hecho antes en esta sesión.
+  const recordFlags = we.sets.map((s, i) => {
+    if (!s.completed || s.setType === 'calentamiento') return false;
+    const before = sessionBests(we.sets.slice(0, i).filter((x) => x.completed));
+    const ref = bests
+      ? {
+          maxWeight: Math.max(bests.maxWeight ?? 0, before.maxWeight ?? 0) || null,
+          bestE1rm: Math.max(bests.bestE1rm ?? 0, before.bestE1rm ?? 0) || null,
+        }
+      : null;
+    return setBeatsRecord(s, ref).length > 0;
+  });
+
   const exerciseActions: SheetAction[] = [
     { label: 'Ver ficha y técnica', icon: 'information-outline', onPress: () => router.push({ pathname: '/ejercicio/[id]', params: { id: we.exerciseId } }) },
     { label: we.notes ? 'Editar nota' : 'Añadir nota', icon: 'note-edit-outline', onPress: () => setEditingNotes(true) },
@@ -79,7 +99,7 @@ export function ExerciseCard({
       icon: 'delete-outline',
       destructive: true,
       onPress: () =>
-        Alert.alert('Quitar ejercicio', `¿Quitar «${we.exercise.nameEs}» y sus series de esta sesión?`, [
+        showAlert('Quitar ejercicio', `¿Quitar «${we.exercise.nameEs}» y sus series de esta sesión?`, [
           { text: 'Cancelar', style: 'cancel' },
           { text: 'Quitar', style: 'destructive', onPress: () => removeWorkoutExercise(db, we.id) },
         ]),
@@ -107,6 +127,8 @@ export function ExerciseCard({
         </Pressable>
         <IconButton name="dots-vertical" label="Opciones del ejercicio" onPress={() => setMenu(true)} />
       </View>
+
+      <ProgressionBadge we={we} onDrop={() => applyWeightDrop(db, we.id)} onSubstitute={() => onSubstitute(we.id)} />
 
       <View style={styles.last}>
         <Icon name="history" size={16} color={colors.textFaint} />
@@ -170,6 +192,7 @@ export function ExerciseCard({
           prev={prevFor[i]}
           effort={effort}
           repHint={s.setType === 'calentamiento' ? undefined : repHint}
+          isRecord={recordFlags[i]}
           onLabelPress={() => setSetMenuFor(s.id)}
           onCommit={(v) => updateSet(db, s.id, v)}
           onToggle={(v) => onToggleSet(we, s.id, s.completed, v)}
@@ -194,7 +217,62 @@ export function ExerciseCard({
   );
 }
 
+const BADGES: Record<string, { text: (we: WE) => string; bg: string; fg: string }> = {
+  subir: { text: (we) => `↑ +${fmtNum(we.progressionDeltaKg ?? 0, 2)} kg`, bg: colors.accent, fg: colors.onAccent },
+  mantener: { text: () => '= Mantener peso', bg: colors.surface2, fg: colors.text },
+  consolidar: { text: () => '= Consolidar', bg: colors.surface2, fg: colors.text },
+  estancado: { text: () => 'Estancado', bg: colors.warningDim, fg: colors.warning },
+  primera_vez: { text: () => 'Primera vez', bg: colors.surface2, fg: colors.textDim },
+  lastre: { text: () => '+ Lastre', bg: colors.accent, fg: colors.onAccent },
+  descarga: { text: () => 'Descarga', bg: colors.surface2, fg: colors.textDim },
+};
+
+function ProgressionBadge({ we, onDrop, onSubstitute }: { we: WE; onDrop: () => void; onSubstitute: () => void }) {
+  const [open, setOpen] = useState(we.progressionAction === 'estancado');
+  if (!we.progressionAction) return null;
+  const b = BADGES[we.progressionAction];
+  const alt = we.targetWeightKg != null ? roundTo(we.targetWeightKg * 0.9, 2.5) : null;
+  return (
+    <View style={{ gap: space.sm, paddingHorizontal: space.sm }}>
+      <Pressable onPress={() => setOpen(!open)} style={styles.badgeRow} accessibilityRole="button" accessibilityLabel="Ver sugerencia de progresión">
+        <View style={[styles.badge, { backgroundColor: b.bg }]}>
+          <Txt variant="label" color={b.fg}>
+            {b.text(we)}
+          </Txt>
+        </View>
+        <Icon name={open ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textFaint} />
+      </Pressable>
+      {open && we.progressionNote ? (
+        <Txt variant="small" color={colors.textDim}>
+          {we.progressionNote}
+        </Txt>
+      ) : null}
+      {open && we.progressionAction === 'estancado' ? (
+        <View style={{ flexDirection: 'row', gap: space.sm }}>
+          <Pressable onPress={onDrop} style={({ pressed }) => [styles.smallBtn, pressed && { opacity: 0.7 }]}>
+            <Txt variant="smallBold">{alt != null ? `Bajar a ${fmtNum(alt, 2)} kg` : 'Bajar 10 %'}</Txt>
+          </Pressable>
+          <Pressable onPress={onSubstitute} style={({ pressed }) => [styles.smallBtn, pressed && { opacity: 0.7 }]}>
+            <Txt variant="smallBold">Cambiar ejercicio</Txt>
+          </Pressable>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, alignSelf: 'flex-start' },
+  badge: { paddingHorizontal: space.sm, paddingVertical: 3, borderRadius: radius.sm },
+  smallBtn: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surface2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: space.sm,
+  },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,

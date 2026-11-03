@@ -33,6 +33,10 @@ export async function setupNotifications() {
     },
   });
   if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('recordatorios', {
+      name: 'Recordatorios de entreno',
+      importance: AndroidImportance.DEFAULT,
+    });
     await Notifications.setNotificationChannelAsync(REST_CHANNEL, {
       name: 'Fin del descanso',
       description: 'Aviso con vibración y sonido cuando termina el descanso entre series',

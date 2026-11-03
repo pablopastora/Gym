@@ -60,6 +60,23 @@
 - **Ejercicios propios**: tienen id `u_…`, foto propia en `documentDirectory/exercise-photos/` y se pueden editar. Solo se pueden borrar si no se usan en ninguna rutina ni en el historial.
 - **Filtros**: por músculo, equipamiento, favoritos y «Mis ejercicios», combinables con la búsqueda sin tildes.
 
+## Notas de implementación (fase 7)
+
+- **Copia de seguridad** (`src/domain/backup.ts`, `src/repositories/backup.ts`, `src/services/backup.ts`):
+  - **Formato**: JSON con `app`, `format`, `schemaVersion` (el número de migraciones) y todas las tablas salvo la caché. El ZIP (hecho con `fflate`, JS puro) añade las fotos de progreso y de ejercicios propios.
+  - **Validación**: se rechazan archivos ajenos o de versiones más nuevas. Las copias de versiones anteriores se aceptan; las columnas que falten toman su valor por defecto.
+  - **Importación (decisión 7a)**:
+    1. Copia automática de los datos actuales en `documentDirectory/backups/` (se conservan 3).
+    2. Se escriben las fotos del ZIP.
+    3. Se borran las tablas en orden inverso y se insertan en orden, para respetar las claves ajenas.
+    4. `runSeed`, para dejar el perfil y la biblioteca al día.
+    5. Se reprograman los recordatorios.
+  - **Tests**: hay uno de ida y vuelta que comprueba que exportar → importar en otra base de datos deja todas las tablas idénticas.
+- **CSV**: separador «;», coma decimal y BOM UTF-8.
+- **Recordatorios**: notificación semanal (`WEEKLY`) en el canal `recordatorios` por cada día activado. Al cambiar algo o restaurar una copia se cancelan y se vuelven a programar todos.
+- **Calendario**: cuadrícula mensual empezando en lunes. Marca los días entrenados (relleno rojo), las descargas (borde rojo) y el cardio (punto). Al tocar un día se ven sus entrenos y su cardio.
+- **Icono**: mancuerna roja sobre negro, con versión adaptativa y monocroma de Android. Se genera con un script de Pillow a partir de formas simples.
+
 ---
 
 # Propuesta original (fase 0)

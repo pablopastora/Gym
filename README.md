@@ -5,6 +5,15 @@ App Android personal (un solo usuario, sin cuentas) para registrar entrenamiento
 - **Stack:** Expo SDK 58 · React Native 0.88 · TypeScript · expo-router · expo-sqlite + Drizzle ORM · Jest
 - **Documentación:** [`docs/benchmark.md`](docs/benchmark.md) (comparativa de apps y fuentes de ejercicios) · [`docs/arquitectura.md`](docs/arquitectura.md) (stack, modelo de datos y reglas)
 
+## Qué hace
+
+- **Inicio**: registro de peso con un toque, sesión de hoy, descarga sugerida, resumen semanal con racha y estado del objetivo.
+- **Entrenar**: sesión activa con series que salen rellenadas con la última vez o con la subida de peso sugerida. Temporizador de descanso automático con aviso y vibración en segundo plano, RIR/RPE, récords en directo, cardio e historial.
+- **Rutinas**: rutina por defecto de 4-5 días, que puedes editar, y tus propias rutinas.
+- **Ejercicios**: 876 ejercicios (154 con ficha en español) con imágenes y vídeos de técnica, filtros y ejercicios propios con foto.
+- **Progreso**: peso con media móvil, IMC, perímetros, fotos con comparador, récords e historial de fuerza con gráficas.
+- **Calendario** y **recordatorios**; **copia de seguridad** (ZIP con fotos, JSON y CSV) y restauración.
+
 ## Estado por fases
 
 | Fase | Contenido | Estado |
@@ -15,7 +24,7 @@ App Android personal (un solo usuario, sin cuentas) para registrar entrenamiento
 | 4 | Doble progresión, récords, historial y gráficas por ejercicio, descarga | ✅ |
 | 5 | Peso con media móvil, medidas, fotos y comparador, resumen semanal y racha | ✅ |
 | 6 | Biblioteca multimedia: 154 fichas en español, vídeos de wger con caché, filtros, ejercicios propios | ✅ |
-| 7 | Calendario, recordatorios, copia de seguridad (JSON/ZIP/CSV), pulido y APK final | ⏳ |
+| 7 | Calendario, recordatorios, copia de seguridad (ZIP/JSON/CSV), icono, pulido y APK | ✅ |
 
 ## Requisitos
 
@@ -51,6 +60,15 @@ npm run lint         # ESLint (config de Expo)
 npm test             # Jest: lógica de dominio + base de datos en memoria (node:sqlite)
 npm run check        # las tres anteriores
 ```
+
+## Copia de seguridad
+
+Todo se guarda solo en el móvil. Desde *Ajustes → Copia de seguridad*:
+
+- **Copia completa (ZIP)**: datos y fotos. Es la recomendada; guárdala en Drive o en el correo.
+- **Solo datos (JSON)**: más ligera, sin fotos.
+- **CSV**: un ZIP con `series.csv`, `entrenos.csv`, `peso.csv`, `medidas.csv` y `cardio.csv`, con «;» como separador y coma decimal para Excel o Sheets en español. Sirve para analizar los datos, no para restaurar.
+- **Restaurar**: sustituye todos los datos por los de la copia. Antes guarda una copia automática (se conservan las 3 últimas) para poder deshacer desde la misma pantalla.
 
 ## Generar el APK (EAS Build, en la nube)
 

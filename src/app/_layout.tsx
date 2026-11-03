@@ -114,6 +114,8 @@ function MigratedApp() {
         <Stack.Screen name="ejercicio/historial/[id]" options={{ title: 'Historial' }} />
         <Stack.Screen name="ejercicio/editar" options={{ title: 'Nuevo ejercicio' }} />
         <Stack.Screen name="ajustes/almacenamiento" options={{ title: 'Almacenamiento y caché' }} />
+        <Stack.Screen name="ajustes/copia" options={{ title: 'Copia de seguridad' }} />
+        <Stack.Screen name="ajustes/recordatorios" options={{ title: 'Recordatorios' }} />
         <Stack.Screen name="records" options={{ title: 'Récords personales' }} />
         <Stack.Screen name="cuerpo/peso" options={{ title: 'Peso' }} />
         <Stack.Screen name="cuerpo/medidas" options={{ title: 'Medidas' }} />

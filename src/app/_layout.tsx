@@ -10,6 +10,7 @@ import { View } from 'react-native';
 import { db, initDb } from '@/db/client';
 import migrationBundle from '@/db/migrations';
 import { runSeed } from '@/db/seed';
+import { setupMediaCache } from '@/services/mediaCache';
 import { setupNotifications } from '@/services/notifications';
 import { Txt } from '@/ui/components';
 import { RestTimerWatcher } from '@/ui/RestTimerWatcher';
@@ -57,6 +58,7 @@ export default function RootLayout() {
       .then(() => setOpened(true))
       .catch((e: Error) => setOpenError(e));
     setupNotifications().catch(() => {});
+    setupMediaCache().catch(() => {});
   }, []);
   if (openError) return <DbError error={openError} />;
   // Si las fuentes fallan, seguimos con las del sistema en vez de bloquear la app.
@@ -110,6 +112,8 @@ function MigratedApp() {
         <Stack.Screen name="rutina/ejercicio/[id]" options={{ title: 'Ejercicio de la rutina' }} />
         <Stack.Screen name="ejercicio/[id]" options={{ title: '' }} />
         <Stack.Screen name="ejercicio/historial/[id]" options={{ title: 'Historial' }} />
+        <Stack.Screen name="ejercicio/editar" options={{ title: 'Nuevo ejercicio' }} />
+        <Stack.Screen name="ajustes/almacenamiento" options={{ title: 'Almacenamiento y caché' }} />
         <Stack.Screen name="records" options={{ title: 'Récords personales' }} />
         <Stack.Screen name="cuerpo/peso" options={{ title: 'Peso' }} />
         <Stack.Screen name="cuerpo/medidas" options={{ title: 'Medidas' }} />

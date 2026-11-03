@@ -123,6 +123,10 @@ export const exercise = sqliteTable(
     /** Rutas relativas de imágenes en la fuente (free-exercise-db) o URLs absolutas. */
     images: text('images', { mode: 'json' }).$type<string[]>().notNull(),
     videoUrl: text('video_url'),
+    /** Autor y licencia del vídeo (wger, CC-BY-SA). */
+    videoAttribution: text('video_attribution'),
+    /** Cuándo se buscó vídeo en wger (para no repetir la búsqueda en cada visita). */
+    videoCheckedAt: integer('video_checked_at'),
     mediaAttribution: text('media_attribution'),
     isFavorite: integer('is_favorite', { mode: 'boolean' }).notNull().default(false),
     isCustom: integer('is_custom', { mode: 'boolean' }).notNull().default(false),

@@ -8,13 +8,13 @@ const SOURCES = [
     name: 'free-exercise-db',
     url: 'https://github.com/yuhonas/free-exercise-db',
     license: 'Unlicense (dominio público)',
-    use: 'Datos base de los ejercicios (músculos, equipamiento, instrucciones originales en inglés) e imágenes.',
+    use: 'Datos base de los 876 ejercicios (músculos, equipamiento, instrucciones originales en inglés) e imágenes. Las imágenes se descargan al verlas y se guardan en caché.',
   },
   {
     name: 'wger',
     url: 'https://wger.de',
-    license: 'CC-BY-SA (autor y licencia indicados en cada imagen o vídeo)',
-    use: 'Vídeos e imágenes complementarios (a partir de la fase 6).',
+    license: 'CC-BY-SA (autor y licencia indicados bajo cada vídeo)',
+    use: 'Vídeos de técnica. La app los busca en wger.de desde tu móvil la primera vez que abres un ejercicio y los guarda en caché. Bajo cada vídeo se muestran su autor y su licencia.',
   },
   {
     name: 'YouTube',
@@ -26,7 +26,13 @@ const SOURCES = [
     name: 'Textos propios',
     url: null,
     license: '—',
-    use: 'Nombres en español, instrucciones traducidas, notas de técnica y errores comunes.',
+    use: 'Fichas en español de 154 ejercicios: nombres, instrucciones, notas de técnica y errores comunes. El resto de ejercicios muestra el texto original en inglés.',
+  },
+  {
+    name: 'Tus fotos',
+    url: null,
+    license: 'Tuyas',
+    use: 'Fotos de progreso y de ejercicios propios: se guardan solo dentro de la app.',
   },
 ];
 

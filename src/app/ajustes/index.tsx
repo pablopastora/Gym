@@ -26,6 +26,12 @@ export default function Ajustes() {
       <SectionTitle>Datos</SectionTitle>
       <View style={{ borderRadius: 16, overflow: 'hidden', gap: 1 }}>
         <ListRow icon="database-export-outline" title="Copia de seguridad" subtitle="Exportar/importar JSON y CSV · fase 7" />
+        <ListRow
+          icon="harddisk"
+          title="Almacenamiento y caché"
+          subtitle="Imágenes y vídeos descargados"
+          onPress={() => router.push('/ajustes/almacenamiento')}
+        />
       </View>
       <SectionTitle>Acerca de</SectionTitle>
       <View style={{ borderRadius: 16, overflow: 'hidden', gap: 1 }}>

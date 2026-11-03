@@ -14,6 +14,18 @@ describe('datos iniciales', () => {
     for (const day of DEFAULT_ROUTINE) for (const e of day.exercises) expect(ids).toContain(e.exerciseId);
   });
 
+  it('hay al menos 150 fichas en español completas', () => {
+    const entries = Object.values(CURATED);
+    expect(entries.length).toBeGreaterThanOrEqual(150);
+    for (const c of entries) {
+      expect(c.nameEs.length).toBeGreaterThan(2);
+      expect(c.instructions.length).toBeGreaterThan(0);
+      expect(c.commonErrors.length).toBeGreaterThan(0);
+    }
+    const names = entries.map((c) => c.nameEs);
+    expect(new Set(names).size).toBe(names.length); // sin nombres repetidos
+  });
+
   it('crea perfil, biblioteca y rutina por defecto, y es idempotente', async () => {
     const { db } = createTestDb();
     await runSeed(db);

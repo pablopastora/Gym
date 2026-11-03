@@ -13,6 +13,7 @@ export default function SelectorEjercicio() {
         usePicker.getState().onPick?.(id);
         router.back();
       }}
+      onCreate={() => router.push('/ejercicio/editar')}
     />
   );
 }

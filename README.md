@@ -14,7 +14,7 @@ App Android personal (un solo usuario, sin cuentas) para registrar entrenamiento
 | 3 | Sesión activa, temporizador de descanso, registro de series, editor de rutinas, cardio, rediseño negro/rojo | ✅ |
 | 4 | Doble progresión, récords, historial y gráficas por ejercicio, descarga | ✅ |
 | 5 | Peso con media móvil, medidas, fotos y comparador, resumen semanal y racha | ✅ |
-| 6 | Biblioteca multimedia completa (~150 fichas en español, wger, caché de vídeo, ejercicios propios) | ⏳ |
+| 6 | Biblioteca multimedia: 154 fichas en español, vídeos de wger con caché, filtros, ejercicios propios | ✅ |
 | 7 | Calendario, recordatorios, copia de seguridad (JSON/ZIP/CSV), pulido y APK final | ⏳ |
 
 ## Requisitos
@@ -97,7 +97,7 @@ scripts/            build-migrations.mjs, import-free-exercise-db.mjs
 - **free-exercise-db** ([yuhonas/free-exercise-db](https://github.com/yuhonas/free-exercise-db)), Unlicense (dominio público): datos base e imágenes de los ejercicios. Las imágenes se descargan al verlas y se guardan en caché en disco.
 - **Textos en español** (nombres, instrucciones, notas de técnica y errores comunes): propios.
 - **YouTube:** solo enlaces de búsqueda; no se descarga ni se incrusta nada.
-- **wger** (CC-BY-SA): previsto para la fase 6, mostrando el autor y la licencia de cada imagen o vídeo.
+- **wger** (CC-BY-SA): vídeos de técnica. La app los busca en wger.de desde el móvil la primera vez que abres un ejercicio, muestra su autor y su licencia, y los guarda en caché (expo-video).
 
 ## Vista previa en el navegador (solo desarrollo)
 

@@ -5,6 +5,8 @@
  */
 import type { ExerciseKind } from '@/db/schema';
 
+import { CURATED_2 } from './curated2';
+
 export interface CuratedExercise {
   nameEs: string;
   instructions: string[];
@@ -16,7 +18,7 @@ export interface CuratedExercise {
   restS?: number;
 }
 
-export const CURATED: Record<string, CuratedExercise> = {
+const CURATED_1: Record<string, CuratedExercise> = {
   // ───────────── Pecho ─────────────
   'Barbell_Bench_Press_-_Medium_Grip': {
     nameEs: 'Press de banca con barra',
@@ -435,3 +437,6 @@ export const CURATED: Record<string, CuratedExercise> = {
     kind: 'abs',
   },
 };
+
+/** Todas las fichas en español (fase 2 + fase 6). */
+export const CURATED: Record<string, CuratedExercise> = { ...CURATED_1, ...CURATED_2 };

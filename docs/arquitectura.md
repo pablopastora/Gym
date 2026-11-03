@@ -49,6 +49,17 @@
 - **Resumen semanal** (Inicio y Progreso): entrenos de la semana, racha, cardio, peso medio y variación, cintura en 4 semanas y si vas en ritmo.
 - **Racha**: semanas seguidas (de lunes a domingo) cumpliendo los días/semana del perfil. La semana en curso suma cuando se cumple y, mientras no se cumple, no rompe la racha.
 
+## Notas de implementación (fase 6)
+
+- **Fichas en español**: 154 (`src/data/curated.ts` + `curated2.ts`), con nombre, instrucciones, errores comunes y, en algunas, nota de técnica, tipo y descanso propio. Al subir `LIBRARY_VERSION` a 2 se reaplican en el primer arranque, sin perder favoritos ni ejercicios propios. Las fichas sin traducir muestran el texto original de free-exercise-db.
+- **Vídeos de wger (decisión 6a)**: al abrir una ficha por primera vez, el móvil busca en `wger.de/api/v2/exerciseinfo/?name__search=…&language__code=en` (formato de wger ≥ 2.6, comprobado en su código fuente). Si el servidor fuera de una versión anterior, recurre a `exercise/search` + `video/`.
+  - **Emparejado conservador** (`src/domain/wger.ts`, con tests): si el nombre no coincide claramente, no se asigna vídeo, porque es mejor ninguno que uno equivocado.
+  - **Qué se guarda**: la URL, el autor y la licencia (que se muestran bajo el vídeo) y la fecha de búsqueda. Si no se encuentra vídeo, se vuelve a buscar a los 30 días; si falla la red, en la siguiente visita.
+  - **Sin verificar desde el entorno de desarrollo**: `wger.de` está bloqueado ahí, así que esta búsqueda solo se ha probado con tests sobre respuestas de ejemplo.
+- **Caché**: imágenes con expo-image (`cachePolicy="disk"`) y vídeos con la caché de expo-video (`useCaching`, máximo 400 MB, se descartan los menos usados). En *Ajustes → Almacenamiento y caché* se ve su tamaño y se puede vaciar.
+- **Ejercicios propios**: tienen id `u_…`, foto propia en `documentDirectory/exercise-photos/` y se pueden editar. Solo se pueden borrar si no se usan en ninguna rutina ni en el historial.
+- **Filtros**: por músculo, equipamiento, favoritos y «Mis ejercicios», combinables con la búsqueda sin tildes.
+
 ---
 
 # Propuesta original (fase 0)

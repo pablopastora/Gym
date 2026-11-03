@@ -7,7 +7,7 @@ import { appMeta, exercise, profile, routine, routineDay, routineExercise } from
 import type { AppDb } from './types';
 
 /** Súbelo cuando cambien free-exercise-db.json o las fichas curadas para reaplicarlas. */
-export const LIBRARY_VERSION = 1;
+export const LIBRARY_VERSION = 2;
 
 async function getMeta(db: AppDb, key: string): Promise<string | undefined> {
   const rows = await db.select().from(appMeta).where(eq(appMeta.key, key));
@@ -24,7 +24,8 @@ async function setMeta(db: AppDb, key: string, value: string) {
 /** Inserta o actualiza la biblioteca preservando favoritos y datos del usuario. */
 export async function seedExerciseLibrary(db: AppDb) {
   const rows = buildExerciseLibrary();
-  const CHUNK = 40;
+  // Lotes pequeños: en la vista previa web cada operación síncrona tiene un tiempo límite.
+  const CHUNK = 10;
   for (let i = 0; i < rows.length; i += CHUNK) {
     await db
       .insert(exercise)

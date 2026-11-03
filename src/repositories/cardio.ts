@@ -3,6 +3,8 @@ import { desc, eq } from 'drizzle-orm';
 import { cardioSession } from '@/db/schema';
 import type { AppDb } from '@/db/types';
 
+import { computeCardioKcal } from './kcal';
+
 export const CARDIO_TYPES = [
   'Cinta inclinada',
   'Cinta',
@@ -38,6 +40,7 @@ export async function addCardio(db: AppDb, input: CardioInput) {
       workoutId: input.workoutId ?? null,
     })
     .returning({ id: cardioSession.id });
+  await computeCardioKcal(db, r.id);
   return r.id;
 }
 

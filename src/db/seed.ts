@@ -3,6 +3,8 @@ import { eq, sql } from 'drizzle-orm';
 import { DEFAULT_ROUTINE, DEFAULT_ROUTINE_NAME } from '@/data/defaultRoutine';
 import { buildExerciseLibrary } from '@/data/library';
 
+import { backfillKcal } from '@/repositories/kcal';
+
 import { appMeta, exercise, profile, routine, routineDay, routineExercise } from './schema';
 import type { AppDb } from './types';
 
@@ -105,5 +107,11 @@ export async function runSeed(db: AppDb) {
   if (!(await getMeta(db, 'default_routine_seeded'))) {
     await seedDefaultRoutine(db);
     await setMeta(db, 'default_routine_seeded', '1');
+  }
+
+  // Kcal de entrenos y cardio anteriores a esta versión (una sola vez).
+  if (!(await getMeta(db, 'kcal_backfill_v1'))) {
+    await backfillKcal(db);
+    await setMeta(db, 'kcal_backfill_v1', '1');
   }
 }

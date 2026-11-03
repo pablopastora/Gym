@@ -23,9 +23,13 @@ export function WeeklySummary({ profile }: { profile: Profile }) {
     db.select({ date: workout.date }).from(workout).where(and(isNotNull(workout.endedAt), gte(workout.date, addDays(ws, -7 * 52)))),
   );
   const { data: cardio } = useLiveQuery(
-    db.select({ min: cardioSession.durationMin }).from(cardioSession).where(gte(cardioSession.date, ws)),
+    db.select({ min: cardioSession.durationMin, kcal: cardioSession.kcal }).from(cardioSession).where(gte(cardioSession.date, ws)),
   );
-  if (!weights || !measures || !workouts || !cardio) return null;
+  const { data: weekKcal } = useLiveQuery(
+    db.select({ kcal: workout.kcal }).from(workout).where(and(isNotNull(workout.endedAt), gte(workout.date, ws))),
+  );
+  if (!weights || !measures || !workouts || !cardio || !weekKcal) return null;
+  const kcalWeek = weekKcal.reduce((a, w) => a + (w.kcal ?? 0), 0) + cardio.reduce((a, c) => a + (c.kcal ?? 0), 0);
 
   const dates = workouts.map((w) => w.date);
   const daysThisWeek = new Set(dates.filter((d) => d >= ws)).size;
@@ -59,6 +63,7 @@ export function WeeklySummary({ profile }: { profile: Profile }) {
           sub={waistNow != null && waistPrev != null && waistPrev !== waistNow ? `${waistNow - waistPrev > 0 ? '+' : ''}${fmtNum(waistNow - waistPrev, 1)} cm en 4 sem.` : 'cm'}
           color={waistNow != null && waistPrev != null && waistNow < waistPrev ? colors.accentText : colors.text}
         />
+        <Stat label="Kcal" value={`~${fmtNum(kcalWeek, 0)}`} sub="entreno + cardio (aprox.)" />
       </Row>
       {track === 'en_ritmo' && <Banner kind="ok">Vas en ritmo hacia tu objetivo.</Banner>}
       {track === 'por_detras' && (

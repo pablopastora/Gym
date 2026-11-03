@@ -9,42 +9,35 @@ import { fmtDuration, fmtNum } from '@/domain/format';
 import { summarizeSets } from '@/domain/workout';
 import { useAsyncQuery } from '@/hooks/useDb';
 import { useNow } from '@/hooks/useNow';
-import { useTodaySession } from '@/hooks/useTodaySession';
+import { useWeekPlan } from '@/hooks/useWeekPlan';
 import { deleteCardio, recentCardioQuery } from '@/repositories/cardio';
-import { getActiveWorkout, recentWorkoutsQuery, startEmptyWorkout, startWorkoutFromDay } from '@/repositories/workouts';
-import { ensureNotificationPermission } from '@/services/notifications';
+import { getActiveWorkout, recentWorkoutsQuery } from '@/repositories/workouts';
+import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
 import { BigButton, Card, EmptyState, ListRow, Row, SectionTitle, Screen, Txt } from '@/ui/components';
 import { colors, radius, space } from '@/ui/theme';
 import { showAlert } from '@/ui/alert';
+import { PlanDayCard } from '@/ui/PlanDayCard';
+import { startSession } from '@/ui/sessionStart';
 
 export default function Entrenar() {
-  const { routine, today, profile } = useTodaySession();
+  const { plan, routine, profile } = useWeekPlan();
   const { data: active } = useAsyncQuery('active-workout-summary', () => getActiveWorkout(db));
   const { data: history } = useAsyncQuery('recent-workouts', () => recentWorkoutsQuery(db, 15));
   const { data: cardio } = useLiveQuery(recentCardioQuery(db, 10));
-  const [starting, setStarting] = useState<number | 'libre' | null>(null);
+  const [another, setAnother] = useState(false);
   const now = useNow(30_000);
 
-  const start = async (dayId: number | 'libre') => {
-    if (!profile) return;
-    if (active) {
-      router.push('/sesion');
-      return;
-    }
-    setStarting(dayId);
-    try {
-      await ensureNotificationPermission();
-      if (dayId === 'libre') await startEmptyWorkout(db);
-      else await startWorkoutFromDay(db, dayId, profile);
-      router.push('/sesion');
-    } catch (e) {
-      showAlert('No se pudo empezar', (e as Error).message);
-    } finally {
-      setStarting(null);
-    }
-  };
+  const start = (dayId: number | 'libre') => profile && startSession(profile, dayId);
+  const advance = (dayId: number, name: string, label: string) =>
+    showAlert('Adelantar sesión', `¿Hacer hoy «${name}» (prevista para ${label.toLowerCase()})? El resto de la semana se recalcula.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Adelantar', onPress: () => start(dayId) },
+    ]);
 
-  const days = routine?.days.filter((d) => (profile?.daysPerWeek ?? 4) >= 5 || !d.isOptional) ?? [];
+  const anotherActions: SheetAction[] = [
+    ...(plan?.nextSessionNow ? [{ label: `Siguiente sesión: ${plan.nextSessionNow.name}`, icon: 'play' as const, onPress: () => start(plan.nextSessionNow!.id) }] : []),
+    { label: 'Entreno libre', icon: 'plus' as const, onPress: () => start('libre') },
+  ];
 
   return (
     <Screen>
@@ -59,46 +52,28 @@ export default function Entrenar() {
         </Card>
       ) : null}
 
-      {routine ? (
+      {routine && plan && profile ? (
         <>
-          <SectionTitle>{routine.name}</SectionTitle>
-          {days.map((d) => {
-            const isToday = today?.id === d.id;
-            return (
-              <Card key={d.id} style={isToday ? { borderColor: colors.accent, borderWidth: 1 } : undefined}>
-                <Row style={{ justifyContent: 'space-between' }}>
-                  <Txt variant="h3" style={{ flex: 1 }}>
-                    {d.name}
-                  </Txt>
-                  {isToday ? (
-                    <View style={{ backgroundColor: colors.accent, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.sm }}>
-                      <Txt variant="label" color={colors.onAccent}>
-                        Toca hoy
-                      </Txt>
-                    </View>
-                  ) : null}
-                </Row>
-                <Txt variant="small" color={colors.textDim} numberOfLines={2}>
-                  {d.exercises.map((e) => e.exercise.nameEs).join(' · ') || 'Sin ejercicios'}
-                </Txt>
-                <BigButton
-                  title={active ? 'Hay una sesión en curso' : 'Empezar'}
-                  icon="play"
-                  kind={isToday ? 'primary' : 'secondary'}
-                  disabled={!!active || d.exercises.length === 0}
-                  loading={starting === d.id}
-                  onPress={() => start(d.id)}
-                />
-              </Card>
-            );
-          })}
+          <SectionTitle right={<Txt variant="caption" color={colors.textFaint}>{routine.name}</Txt>}>Tu semana</SectionTitle>
+          {plan.days.map((d) => (
+            <PlanDayCard
+              key={d.date}
+              entry={d}
+              profile={profile}
+              onStart={active ? undefined : () => d.session && start(d.session.id)}
+              onAdvance={active || !d.session ? undefined : () => advance(d.session!.id, d.session!.name, d.label)}
+            />
+          ))}
+          {plan.todayEntry.status === 'completado' && !active ? (
+            <BigButton title="Empezar otra sesión hoy" icon="plus" kind="secondary" onPress={() => setAnother(true)} />
+          ) : null}
         </>
       ) : (
         <EmptyState icon="clipboard-list-outline" title="Sin rutina activa" text="Activa o crea una rutina en la pestaña Rutinas." />
       )}
 
       <Row>
-        <BigButton title="Entreno libre" icon="plus" kind="ghost" style={{ flex: 1 }} disabled={!!active} loading={starting === 'libre'} onPress={() => start('libre')} />
+        <BigButton title="Entreno libre" icon="plus" kind="ghost" style={{ flex: 1 }} disabled={!!active} onPress={() => start('libre')} />
         <BigButton title="Cardio" icon="run" kind="ghost" style={{ flex: 1 }} onPress={() => router.push('/cardio/nuevo')} />
       </Row>
 
@@ -135,6 +110,7 @@ export default function Entrenar() {
                   formatDateLong(c.date),
                   c.distanceKm != null ? `${fmtNum(c.distanceKm, 2)} km` : null,
                   c.steps != null ? `${c.steps.toLocaleString('es-ES')} pasos` : null,
+                  c.kcal != null ? `~${fmtNum(c.kcal, 0)} kcal` : null,
                 ]
                   .filter(Boolean)
                   .join(' · ')}
@@ -150,6 +126,7 @@ export default function Entrenar() {
         </>
       ) : null}
       <View style={{ height: space.lg }} />
+      <ActionSheet visible={another} title="Otra sesión hoy" actions={anotherActions} onClose={() => setAnother(false)} />
     </Screen>
   );
 }

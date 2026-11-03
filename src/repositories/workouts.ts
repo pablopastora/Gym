@@ -17,6 +17,7 @@ import { resolveRest } from '@/domain/exerciseClassify';
 import { deloadSets, suggestProgression, type Suggestion } from '@/domain/progression';
 import { moveItem, planExerciseSets, roundTo, type LastSet, type PlannedSet } from '@/domain/workout';
 
+import { computeWorkoutKcal } from './kcal';
 import { getExerciseHistory } from './progress';
 
 /** Descanso tras una serie de calentamiento (s). */
@@ -342,11 +343,8 @@ export function workoutDetailQuery(db: AppDb, workoutId: number) {
 
 export type WorkoutDetail = NonNullable<Awaited<ReturnType<typeof workoutDetailQuery>>>;
 
-/**
- * Termina la sesión: elimina series sin completar y ejercicios vacíos.
- * Devuelve el número de series completadas.
- */
-export async function finishWorkout(db: AppDb, workoutId: number, now = Date.now()) {
+/** Elimina series sin completar y ejercicios que se queden vacíos. */
+async function pruneIncomplete(db: AppDb, workoutId: number) {
   const wes = await db
     .select({ id: workoutExercise.id })
     .from(workoutExercise)
@@ -359,13 +357,45 @@ export async function finishWorkout(db: AppDb, workoutId: number, now = Date.now
       if (!left.length) await db.delete(workoutExercise).where(eq(workoutExercise.id, id));
     }
   }
-  await db.update(workout).set({ endedAt: now }).where(eq(workout.id, workoutId));
+}
+
+async function countSets(db: AppDb, workoutId: number) {
   const remaining = await db
     .select({ id: workoutSet.id })
     .from(workoutSet)
     .innerJoin(workoutExercise, eq(workoutExercise.id, workoutSet.workoutExerciseId))
     .where(eq(workoutExercise.workoutId, workoutId));
   return remaining.length;
+}
+
+/**
+ * Termina la sesión: elimina series sin completar y ejercicios vacíos, y calcula
+ * las kcal. Devuelve el número de series completadas.
+ */
+export async function finishWorkout(db: AppDb, workoutId: number, now = Date.now()) {
+  await pruneIncomplete(db, workoutId);
+  await db.update(workout).set({ endedAt: now }).where(eq(workout.id, workoutId));
+  await computeWorkoutKcal(db, workoutId);
+  return countSets(db, workoutId);
+}
+
+/**
+ * Guarda la edición de un entreno ya terminado: descarta series sin completar y
+ * recalcula las kcal. Récords y progresión se recalculan solos a partir del historial.
+ */
+export async function saveWorkoutEdits(db: AppDb, workoutId: number) {
+  await pruneIncomplete(db, workoutId);
+  await computeWorkoutKcal(db, workoutId);
+  return countSets(db, workoutId);
+}
+
+/** Entrenos terminados en una fecha (para saber si «hoy» ya está hecho). */
+export function workoutsOnDateQuery(db: AppDb, date: string) {
+  return db
+    .select({ id: workout.id, name: workout.name, routineDayId: workout.routineDayId, isDeload: workout.isDeload, kcal: workout.kcal })
+    .from(workout)
+    .where(and(eq(workout.date, date), isNotNull(workout.endedAt)))
+    .orderBy(asc(workout.startedAt));
 }
 
 export async function discardWorkout(db: AppDb, workoutId: number) {

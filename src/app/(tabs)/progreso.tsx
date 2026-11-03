@@ -13,6 +13,7 @@ import { MeasurementChart, WeightChart } from '@/ui/BodyCharts';
 import { BigButton, Card, ListRow, Row, SectionTitle, Screen, Segmented, Txt } from '@/ui/components';
 import { DeloadCard } from '@/ui/DeloadCard';
 import { colors, radius, space } from '@/ui/theme';
+import { WeeklyKcal } from '@/ui/WeeklyKcal';
 import { WeeklySummary } from '@/ui/WeeklySummary';
 
 type Tab = 'cuerpo' | 'fuerza';
@@ -47,6 +48,9 @@ function Cuerpo() {
     <View style={{ gap: space.lg }}>
       <SectionTitle>Esta semana</SectionTitle>
       <WeeklySummary profile={profile} />
+
+      <SectionTitle>Gasto de energía</SectionTitle>
+      <WeeklyKcal />
 
       <Row gap={space.sm}>
         <BigButton title="Peso" icon="scale-bathroom" kind="secondary" style={{ flex: 1, paddingHorizontal: space.sm }} onPress={() => router.push('/cuerpo/peso')} />

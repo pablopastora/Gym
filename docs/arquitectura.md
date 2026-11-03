@@ -77,6 +77,27 @@
 - **Calendario**: cuadrícula mensual empezando en lunes. Marca los días entrenados (relleno rojo), las descargas (borde rojo) y el cardio (punto). Al tocar un día se ven sus entrenos y su cardio.
 - **Icono**: mancuerna roja sobre negro, con versión adaptativa y monocroma de Android. Se genera con un script de Pillow a partir de formas simples.
 
+## Ronda de mejoras (después de la fase 7)
+
+- **Plan semanal** (`src/domain/weekPlan.ts`, `src/repositories/plan.ts`):
+  - **Días de entreno**: se eligen en Ajustes (`profile.training_weekdays`). Por defecto dependen de los días por semana: 4 → L-M-J-V; 5 → L-V.
+  - **Rotación**: continúa desde el último entreno *de rutina* terminado. Un entreno libre ya no la reinicia, y saltarse un día no salta una sesión.
+  - **Hoy**: si ya hay un entreno terminado hoy, está «completado» y la siguiente sesión va al próximo día de entreno, etiquetado «Mañana» o con el nombre del día.
+  - **Fecha**: la de hoy se inyecta y se actualiza a medianoche y al volver a la app (`useToday`).
+  - **Tests**: cubren terminar el entreno, cruzar la medianoche, saltarse un día, un día de descanso, el domingo y dos sesiones el mismo día.
+- **Editar un entreno terminado** (`/sesion/editar/[id]`): reutiliza las tarjetas de la sesión. Al guardar o salir se descartan las series sin ✓ y se recalculan las kcal. Récords y progresión se derivan del historial, así que se recalculan solos.
+- **Kcal** (`src/domain/kcal.ts`):
+  - **Fuerza**: MET 3,5, 5 o 6 según el esfuerzo (RIR/RPE), la densidad (series por hora) y el volumen, por el peso más reciente y las horas efectivas (limitadas a 3,5 min por serie + 10 min, por si se olvida terminar la sesión).
+  - **Cardio**: MET según el tipo y el ritmo.
+  - **Almacenamiento**: se guardan en `workout.kcal`/`met` y `cardio_session.kcal`. Los entrenos anteriores se calculan una sola vez al arrancar.
+- **Sugerencias semanales** (`src/domain/adapt.ts`, `src/repositories/adapt.ts`, tabla `routine_suggestion`):
+  - **Cuándo**: se generan la primera vez que se abre la app cada semana, analizando las 2 semanas anteriores completas.
+  - **Reglas**: refuerzo, avance y equilibrio.
+  - **Límites**: los básicos son fijos. Como mucho 2 sugerencias por día de rutina y 4 por semana. Nunca el mismo ejercicio dos semanas seguidas, y nada se repite durante 4 semanas tras rechazarlo.
+  - **Déficit y lesiones**: el modo déficit limita el volumen y se filtran las variantes de riesgo según las lesiones del perfil.
+  - **Aplicación**: al aceptar se modifica la rutina. Si la rutina ha cambiado desde entonces, la sugerencia caduca. El historial (aceptadas, rechazadas y caducadas, con su motivo) está en *Rutinas → Historial de cambios sugeridos*.
+- **Migración 0004** (aditiva): `routine_suggestion`, `profile.training_weekdays`, `workout.kcal/met` y `cardio_session.kcal`. La nueva tabla se incluye en la copia de seguridad.
+
 ---
 
 # Propuesta original (fase 0)

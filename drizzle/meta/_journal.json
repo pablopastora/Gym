@@ -29,6 +29,13 @@
       "when": 1793689552744,
       "tag": "0003_video_wger",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1793742064072,
+      "tag": "0004_hoy_kcal_sugerencias",
+      "breakpoints": true
     }
   ]
 }

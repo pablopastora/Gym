@@ -101,6 +101,8 @@ function MigratedApp() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="sesion/index" options={{ title: 'Entrenando', gestureEnabled: false }} />
         <Stack.Screen name="sesion/resumen/[id]" options={{ title: 'Resumen' }} />
+        <Stack.Screen name="sesion/editar/[id]" options={{ title: 'Editar entreno' }} />
+        <Stack.Screen name="rutina/cambios" options={{ title: 'Historial de cambios' }} />
         <Stack.Screen name="selector-ejercicio" options={{ title: 'Elegir ejercicio', presentation: 'modal' }} />
         <Stack.Screen name="cardio/nuevo" options={{ title: 'Registrar cardio' }} />
         <Stack.Screen name="calendario" options={{ title: 'Calendario' }} />

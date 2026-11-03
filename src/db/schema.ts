@@ -50,6 +50,8 @@ export const profile = sqliteTable('profile', {
   deloadUntil: text('deload_until'),
   /** No volver a sugerir la descarga hasta esta fecha. */
   deloadSnoozeUntil: text('deload_snooze_until'),
+  /** Días de entreno de la semana (1 = lunes … 7 = domingo). null = según días/semana. */
+  trainingWeekdays: text('training_weekdays', { mode: 'json' }).$type<number[]>(),
   updatedAt: integer('updated_at'),
 });
 
@@ -198,6 +200,9 @@ export const workout = sqliteTable(
     name: text('name').notNull(),
     notes: text('notes'),
     isDeload: integer('is_deload', { mode: 'boolean' }).notNull().default(false),
+    /** Kcal estimadas (MET × peso × horas efectivas) y MET usado. */
+    kcal: real('kcal'),
+    met: real('met'),
   },
   (t) => [index('workout_date_idx').on(t.date)],
 );
@@ -303,6 +308,8 @@ export const cardioSession = sqliteTable(
     steps: integer('steps'),
     distanceKm: real('distance_km'),
     notes: text('notes'),
+    /** Kcal estimadas según tipo, duración y ritmo. */
+    kcal: real('kcal'),
     workoutId: integer('workout_id').references(() => workout.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
   },
@@ -326,6 +333,39 @@ export const mediaCache = sqliteTable('media_cache', {
   lastUsedAt: integer('last_used_at').notNull(),
 });
 
+export type SuggestionRule = 'refuerzo' | 'avance' | 'equilibrio';
+export type SuggestionAction = 'sustituir' | 'anadir' | 'series';
+export type SuggestionStatus = 'pendiente' | 'aceptada' | 'rechazada' | 'caducada';
+
+/** Sugerencias semanales de ajuste de la rutina (y su historial). */
+export const routineSuggestion = sqliteTable(
+  'routine_suggestion',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    /** Lunes de la semana en que se generó. */
+    weekStart: text('week_start').notNull(),
+    rule: text('rule').$type<SuggestionRule>().notNull(),
+    action: text('action').$type<SuggestionAction>().notNull(),
+    routineId: integer('routine_id').references(() => routine.id, { onDelete: 'set null' }),
+    routineDayId: integer('routine_day_id').references(() => routineDay.id, { onDelete: 'set null' }),
+    routineExerciseId: integer('routine_exercise_id').references(() => routineExercise.id, { onDelete: 'set null' }),
+    /** Ejercicio afectado (el que se sustituye o al que se añaden series). */
+    exerciseId: text('exercise_id'),
+    /** Ejercicio propuesto (al sustituir o añadir). */
+    suggestedExerciseId: text('suggested_exercise_id'),
+    setsDelta: integer('sets_delta'),
+    muscle: text('muscle'),
+    reason: text('reason').notNull(),
+    status: text('status').$type<SuggestionStatus>().notNull().default('pendiente'),
+    /** Descripción del cambio aplicado (historial). */
+    appliedSummary: text('applied_summary'),
+    createdAt: createdAt(),
+    decidedAt: integer('decided_at'),
+  },
+  (t) => [index('routine_suggestion_week_idx').on(t.weekStart)],
+);
+
+export type RoutineSuggestion = typeof routineSuggestion.$inferSelect;
 export type Profile = typeof profile.$inferSelect;
 export type Exercise = typeof exercise.$inferSelect;
 export type NewExercise = typeof exercise.$inferInsert;

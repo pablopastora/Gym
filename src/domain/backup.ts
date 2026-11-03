@@ -29,6 +29,7 @@ export const BACKUP_TABLES = [
   'progressPhoto',
   'cardioSession',
   'reminder',
+  'routineSuggestion',
 ] as const;
 
 export type BackupTable = (typeof BACKUP_TABLES)[number];

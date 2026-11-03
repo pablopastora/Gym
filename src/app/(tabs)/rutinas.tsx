@@ -44,6 +44,7 @@ export default function Rutinas() {
         </Card>
       ))}
       <BigButton title="Nueva rutina" icon="plus" kind="secondary" onPress={nueva} />
+      <BigButton title="Historial de cambios sugeridos" icon="history" kind="ghost" onPress={() => router.push('/rutina/cambios')} />
     </Screen>
   );
 }

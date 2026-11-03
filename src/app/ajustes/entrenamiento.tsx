@@ -7,11 +7,13 @@ import type { Profile } from '@/db/schema';
 import { parseDecimal } from '@/domain/format';
 import { useProfile } from '@/hooks/useDb';
 import { updateProfile } from '@/repositories/profile';
-import { BigButton, Card, Field, Row, SectionTitle, Screen, Segmented, Txt } from '@/ui/components';
-import { colors } from '@/ui/theme';
+import { defaultTrainingWeekdays, resolveTrainingWeekdays, WEEKDAY_NAMES } from '@/domain/weekPlan';
+import { BigButton, Card, Chip, Field, Row, SectionTitle, Screen, Segmented, Txt } from '@/ui/components';
+import { colors, space } from '@/ui/theme';
 
 type Form = {
   daysPerWeek: number;
+  weekdays: number[];
   effortMetric: 'rir' | 'rpe' | 'ninguno';
   barKg: string;
   incUpper: string;
@@ -32,6 +34,7 @@ export default function AjustesEntrenamiento() {
 function EntrenamientoForm({ p }: { p: Profile }) {
   const [form, setForm] = useState<Form>(() => ({
     daysPerWeek: p.daysPerWeek,
+    weekdays: resolveTrainingWeekdays(p),
     effortMetric: p.effortMetric,
     barKg: s(p.barKg),
     incUpper: s(p.incrementUpperKg),
@@ -65,7 +68,8 @@ function EntrenamientoForm({ p }: { p: Profile }) {
 
   const save = async () => {
     await updateProfile(db, {
-      daysPerWeek: form.daysPerWeek,
+      daysPerWeek: form.weekdays.length,
+      trainingWeekdays: form.weekdays,
       effortMetric: form.effortMetric,
       barKg: bar!,
       incrementUpperKg: parseDecimal(form.incUpper)!,
@@ -80,17 +84,30 @@ function EntrenamientoForm({ p }: { p: Profile }) {
 
   return (
     <Screen>
-      <SectionTitle>Días por semana</SectionTitle>
-      <Segmented
-        options={[
-          { value: 4, label: '4 días' },
-          { value: 5, label: '5 días' },
-        ]}
-        value={form.daysPerWeek}
-        onChange={(v) => set({ daysPerWeek: v })}
-      />
+      <SectionTitle>Días de entreno</SectionTitle>
+      <Row gap={space.sm} style={{ flexWrap: 'wrap' }}>
+        {WEEKDAY_NAMES.map((name, i) => {
+          const d = i + 1;
+          const on = form.weekdays.includes(d);
+          return (
+            <Chip
+              key={d}
+              label={name.slice(0, 3)}
+              active={on}
+              onPress={() => {
+                const next = on ? form.weekdays.filter((x) => x !== d) : [...form.weekdays, d].sort((a, b) => a - b);
+                if (next.length) set({ weekdays: next });
+              }}
+            />
+          );
+        })}
+      </Row>
+      <Row gap={space.sm}>
+        <Chip label="4 días (L-M-J-V)" onPress={() => set({ weekdays: defaultTrainingWeekdays(4) })} />
+        <Chip label="5 días (L-V)" onPress={() => set({ weekdays: defaultTrainingWeekdays(5) })} />
+      </Row>
       <Txt variant="small" color={colors.textDim}>
-        Con 4 días se salta el día 5 (opcional) de la rutina.
+        {`${form.weekdays.length} días por semana. El resto son días de descanso. Con menos de 5 días se salta el día opcional de la rutina.`}
       </Txt>
 
       <SectionTitle>Esfuerzo por serie</SectionTitle>

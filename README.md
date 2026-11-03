@@ -13,6 +13,9 @@ App Android personal (un solo usuario, sin cuentas) para registrar entrenamiento
 - **Ejercicios**: 876 ejercicios (154 con ficha en español) con imágenes y vídeos de técnica, filtros y ejercicios propios con foto.
 - **Progreso**: peso con media móvil, IMC, perímetros, fotos con comparador, récords e historial de fuerza con gráficas.
 - **Calendario** y **recordatorios**; **copia de seguridad** (ZIP con fotos, JSON y CSV) y restauración.
+- **Plan semanal**: Hoy, Mañana y el resto de días con sus ejercicios. Se marcan los días completados, de descanso y no entrenados. Puedes adelantar una sesión o hacer otra el mismo día, y editar un entreno ya terminado.
+- **Kcal estimadas** de cada entreno y cardio (MET × peso × horas, ±25 %), con el total semanal en Inicio y una gráfica en Progreso.
+- **Sugerencias semanales** de ajuste de la rutina (refuerzo, avance, equilibrio), que solo se aplican si las aceptas, con historial de cambios.
 
 ## Estado por fases
 

@@ -26,6 +26,7 @@ const TABLES: Record<BackupTable, any> = {
   progressPhoto: schema.progressPhoto,
   cardioSession: schema.cardioSession,
   reminder: schema.reminder,
+  routineSuggestion: schema.routineSuggestion,
 };
 
 export async function exportAll(db: AppDb): Promise<BackupFile> {

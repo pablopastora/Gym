@@ -1,63 +1,52 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { Pressable, View } from 'react-native';
 
 import { db } from '@/db/client';
 import { bmi, bmiCategory, BMI_LABELS, currentTrend } from '@/domain/body';
-import { formatDateLong, toISODate } from '@/domain/dates';
-import { resolveRest } from '@/domain/exerciseClassify';
+import { formatDateLong } from '@/domain/dates';
 import { fmtNum } from '@/domain/format';
 import { evaluateGoal } from '@/domain/goals';
-import { estimateSessionMinutes } from '@/domain/session';
 import { useAsyncQuery } from '@/hooks/useDb';
-import { useTodaySession } from '@/hooks/useTodaySession';
+import { useWeekPlan } from '@/hooks/useWeekPlan';
 import { weightsQuery } from '@/repositories/body';
-import { getActiveWorkout, startWorkoutFromDay } from '@/repositories/workouts';
-import { ensureNotificationPermission } from '@/services/notifications';
-import { Banner, BigButton, Card, Row, SectionTitle, Screen, Stat, Txt } from '@/ui/components';
+import { getActiveWorkout, workoutsOnDateQuery } from '@/repositories/workouts';
+import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
+import { Banner, BigButton, Card, Icon, Row, SectionTitle, Screen, Stat, Txt } from '@/ui/components';
+import { SessionPreview, sessionMinutes } from '@/ui/PlanDayCard';
+import { startSession } from '@/ui/sessionStart';
+import { WeeklySuggestions } from '@/ui/WeeklySuggestions';
 import { DeloadCard } from '@/ui/DeloadCard';
 import { QuickWeight } from '@/ui/QuickWeight';
 import { WeeklySummary } from '@/ui/WeeklySummary';
-import { colors } from '@/ui/theme';
+import { colors, space } from '@/ui/theme';
 import { showAlert } from '@/ui/alert';
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function Inicio() {
-  const todayIso = toISODate();
-  const { today, profile } = useTodaySession();
+  const { plan, profile, today: todayIso } = useWeekPlan();
   const { data: active } = useAsyncQuery('active-workout-home', () => getActiveWorkout(db));
-  const [starting, setStarting] = useState(false);
   const { data: weights } = useLiveQuery(weightsQuery(db));
+  const { data: doneToday } = useLiveQuery(workoutsOnDateQuery(db, todayIso), [todayIso]);
+  const [another, setAnother] = useState(false);
 
   if (!profile) return null;
 
-  const startToday = async () => {
-    if (!today) return;
-    setStarting(true);
-    try {
-      await ensureNotificationPermission();
-      await startWorkoutFromDay(db, today.id, profile);
-      router.push('/sesion');
-    } catch (e) {
-      showAlert('No se pudo empezar', (e as Error).message);
-    } finally {
-      setStarting(false);
-    }
-  };
-
+  const start = (dayId: number | 'libre') => startSession(profile, dayId);
   const trend = currentTrend(weights ?? [], todayIso);
   const currentKg = trend ?? weights?.at(-1)?.weightKg ?? profile.startWeightKg;
   const imc = bmi(currentKg, profile.heightCm);
   const goal = evaluateGoal({ currentKg, goalKg: profile.goalWeightKg, goalDate: profile.goalDate, today: todayIso });
 
-  const defaults = profile;
-  const sessionExercises =
-    today?.exercises.map((e) => ({
-      sets: e.sets,
-      warmupSets: e.warmupSets,
-      restS: resolveRest(e.exercise.kind, defaults, e.exercise.defaultRestS, e.restS),
-    })) ?? [];
+  const todayEntry = plan?.todayEntry;
+  const next = plan?.next && !plan.next.isToday ? plan.next : null;
+  const lastToday = doneToday?.at(-1);
+  const anotherActions: SheetAction[] = [
+    ...(plan?.nextSessionNow ? [{ label: `Siguiente sesión: ${plan.nextSessionNow.name}`, icon: 'play' as const, onPress: () => start(plan.nextSessionNow!.id) }] : []),
+    { label: 'Entreno libre', icon: 'plus' as const, onPress: () => start('libre') },
+  ];
 
   return (
     <Screen>
@@ -65,7 +54,7 @@ export default function Inicio() {
 
       <QuickWeight />
 
-      <SectionTitle>Sesión de hoy</SectionTitle>
+      <SectionTitle>Hoy</SectionTitle>
       {active ? (
         <Card style={{ borderColor: colors.accent, borderWidth: 1 }}>
           <Txt variant="label" color={colors.accentText}>
@@ -74,27 +63,95 @@ export default function Inicio() {
           <Txt variant="h2">{active.name}</Txt>
           <BigButton title="Continuar" icon="play" onPress={() => router.push('/sesion')} />
         </Card>
-      ) : today ? (
-        <Card>
-          <Txt variant="h1">{today.name}</Txt>
-          <Txt color={colors.textDim}>
-            {today.exercises.length} ejercicios · ~{estimateSessionMinutes(sessionExercises)} min
-          </Txt>
-          <Txt variant="small" color={colors.textDim} numberOfLines={3}>
-            {today.exercises.map((e) => e.exercise.nameEs).join(' · ')}
-          </Txt>
-          {today.cardioNote ? (
-            <Txt variant="small" color={colors.textDim}>
-              {today.cardioNote}
-            </Txt>
-          ) : null}
-          <BigButton title="Empezar entrenamiento" icon="play" loading={starting} onPress={startToday} />
-        </Card>
-      ) : (
+      ) : !plan?.days.length && !doneToday?.length ? (
         <Card>
           <Txt color={colors.textDim}>No hay ninguna rutina activa. Actívala en la pestaña Rutinas.</Txt>
         </Card>
+      ) : doneToday?.length ? (
+        <Card style={{ borderColor: colors.accent, borderWidth: 1 }}>
+          <Row gap={space.sm}>
+            <Icon name="check-circle" color={colors.accentText} size={28} />
+            <Txt variant="h2" style={{ flex: 1 }}>
+              Entrenamiento de hoy completado
+            </Txt>
+          </Row>
+          {doneToday.map((w) => (
+            <Txt key={w.id} color={colors.textDim}>
+              {`${w.name}${w.kcal ? ` · ~${fmtNum(w.kcal, 0)} kcal` : ''}`}
+            </Txt>
+          ))}
+          <Row gap={space.sm}>
+            <BigButton
+              title="Ver resumen"
+              icon="text-box-check-outline"
+              style={{ flex: 1, paddingHorizontal: space.sm }}
+              onPress={() => lastToday && router.push({ pathname: '/sesion/resumen/[id]', params: { id: lastToday.id } })}
+            />
+            <BigButton
+              title="Editar"
+              icon="pencil-outline"
+              kind="secondary"
+              style={{ flex: 1, paddingHorizontal: space.sm }}
+              onPress={() => lastToday && router.push({ pathname: '/sesion/editar/[id]', params: { id: lastToday.id } })}
+            />
+          </Row>
+          <BigButton title="Empezar otra sesión" icon="plus" kind="ghost" onPress={() => setAnother(true)} />
+        </Card>
+      ) : todayEntry?.status === 'pendiente' && todayEntry.session ? (
+        <Card style={{ borderColor: colors.accent, borderWidth: 1 }}>
+          <Txt variant="label" color={colors.accentText}>
+            Toca hoy
+          </Txt>
+          <Txt variant="h1">{todayEntry.session.name}</Txt>
+          <Txt color={colors.textDim}>{`${todayEntry.session.exercises.length} ejercicios · ~${sessionMinutes(todayEntry.session, profile)} min`}</Txt>
+          <SessionPreview day={todayEntry.session} profile={profile} />
+          <BigButton title="Empezar entrenamiento" icon="play" onPress={() => start(todayEntry.session!.id)} />
+        </Card>
+      ) : (
+        <Card>
+          <Row gap={space.sm}>
+            <Icon name="sleep" color={colors.textDim} />
+            <Txt variant="h2">Hoy toca descanso</Txt>
+          </Row>
+          <Txt variant="small" color={colors.textDim}>
+            Recuperar también es entrenar. Si quieres, puedes adelantar la siguiente sesión.
+          </Txt>
+        </Card>
       )}
+
+      {next?.session && !active ? (
+        <Card>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <View style={{ flex: 1 }}>
+              <Txt variant="label" color={colors.textDim}>
+                {`Siguiente · ${next.label}`}
+              </Txt>
+              <Txt variant="h3">{next.session.name}</Txt>
+            </View>
+            <Pressable onPress={() => router.push('/entrenar')} hitSlop={8}>
+              <Txt variant="caption" color={colors.textDim}>
+                Ver la semana ›
+              </Txt>
+            </Pressable>
+          </Row>
+          <Txt variant="small" color={colors.textDim} numberOfLines={2}>
+            {next.session.exercises.map((e) => `${e.exercise.nameEs} ${e.sets}×${e.repMin}-${e.repMax}`).join(' · ')}
+          </Txt>
+          <BigButton
+            title="Adelantar a hoy"
+            icon="fast-forward"
+            kind="ghost"
+            onPress={() =>
+              showAlert('Adelantar sesión', `¿Hacer hoy «${next.session!.name}» (prevista para ${next.label.toLowerCase()})?`, [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Adelantar', onPress: () => start(next.session!.id) },
+              ])
+            }
+          />
+        </Card>
+      ) : null}
+
+      <WeeklySuggestions today={todayIso} />
 
       <DeloadCard />
 
@@ -117,6 +174,7 @@ export default function Inicio() {
           <Banner kind={goal.status === 'muy_agresivo' ? 'danger' : 'warning'}>{goal.message}</Banner>
         )}
       </Card>
+      <ActionSheet visible={another} title="Otra sesión hoy" actions={anotherActions} onClose={() => setAnother(false)} />
     </Screen>
   );
 }

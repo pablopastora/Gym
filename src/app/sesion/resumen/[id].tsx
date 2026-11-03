@@ -1,12 +1,16 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { eq } from 'drizzle-orm';
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { Pressable, View } from 'react-native';
 
 import { db } from '@/db/client';
 import { formatDateLong } from '@/domain/dates';
 import { fmtDuration, fmtNum } from '@/domain/format';
 import { RECORD_LABELS } from '@/domain/records';
+import { KCAL_EXPLANATION, STRENGTH_LEVEL_LABEL, type StrengthLevel } from '@/domain/kcal';
 import { formatSets, summarizeSets } from '@/domain/workout';
+import { cardioSession } from '@/db/schema';
 import { useAsyncQuery } from '@/hooks/useDb';
 import { recordsInWorkout } from '@/repositories/progress';
 import { discardWorkout, updateWorkoutNotes, workoutDetailQuery } from '@/repositories/workouts';
@@ -18,8 +22,12 @@ export default function Resumen() {
   const { id, nuevo } = useLocalSearchParams<{ id: string; nuevo?: string }>();
   const { data: w } = useAsyncQuery(`workout-${id}`, () => workoutDetailQuery(db, Number(id)));
   const { data: recs } = useAsyncQuery(`records-${id}`, () => recordsInWorkout(db, Number(id)));
+  const { data: linkedCardio } = useLiveQuery(db.select().from(cardioSession).where(eq(cardioSession.workoutId, Number(id))), [id]);
   const [notes, setNotes] = useState<string | null>(null);
   if (!w) return null;
+  const level: StrengthLevel | null = w.met == null ? null : w.met >= 6 ? 'intenso' : w.met <= 3.5 ? 'ligero' : 'moderado';
+  const cardioKcal = (linkedCardio ?? []).reduce((a, c) => a + (c.kcal ?? 0), 0);
+  const totalKcal = (w.kcal ?? 0) + cardioKcal;
 
   const allSets = w.exercises.flatMap((e) => e.sets);
   const sum = summarizeSets(allSets);
@@ -41,6 +49,28 @@ export default function Resumen() {
           <Stat label="Volumen" value={`${fmtNum(sum.volumeKg, 0)} kg`} color={colors.accentText} />
           <Stat label="Repeticiones" value={String(sum.reps)} />
         </Row>
+        {w.kcal != null ? (
+          <Row align="flex-start">
+            <View style={{ flex: 1 }}>
+              <Row gap={space.xs}>
+                <Txt variant="label" color={colors.textDim}>
+                  Kcal estimadas
+                </Txt>
+                <Pressable
+                  onPress={() => showAlert('¿Cómo se calculan las kcal?', KCAL_EXPLANATION)}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cómo se calculan las kcal">
+                  <Icon name="information-outline" size={18} color={colors.textDim} />
+                </Pressable>
+              </Row>
+              <Txt variant="display">{`~${fmtNum(totalKcal, 0)}`}</Txt>
+              <Txt variant="caption" color={colors.textFaint}>
+                {`aprox. ±25 %${level ? ` · intensidad ${STRENGTH_LEVEL_LABEL[level]} (MET ${fmtNum(w.met!, 1)})` : ''}${cardioKcal ? ` · incluye ${fmtNum(cardioKcal, 0)} de cardio` : ''}`}
+              </Txt>
+            </View>
+          </Row>
+        ) : null}
       </Card>
       {recs?.length ? (
         <Card style={{ backgroundColor: colors.accentDim, borderColor: colors.accent }}>
@@ -92,6 +122,12 @@ export default function Resumen() {
 
       <View style={{ gap: space.md }}>
         <BigButton title="Listo" icon="check" onPress={() => router.dismissTo('/entrenar')} />
+        <BigButton
+          title="Editar entreno"
+          icon="pencil-outline"
+          kind="secondary"
+          onPress={() => router.push({ pathname: '/sesion/editar/[id]', params: { id: w.id } })}
+        />
         <BigButton
           title="Borrar entreno"
           kind="ghost"

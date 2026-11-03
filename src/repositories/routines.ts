@@ -1,4 +1,4 @@
-import { asc, desc, eq, isNotNull, max } from 'drizzle-orm';
+import { and, asc, desc, eq, isNotNull, max } from 'drizzle-orm';
 
 import { exercise, routine, routineDay, routineExercise, workout, type RoutineExercise } from '@/db/schema';
 import { moveItem } from '@/domain/workout';
@@ -36,7 +36,8 @@ export async function getLastWorkoutDayId(db: AppDb): Promise<number | null> {
   const rows = await db
     .select({ dayId: workout.routineDayId })
     .from(workout)
-    .where(isNotNull(workout.endedAt))
+    // Solo entrenos de rutina: un «entreno libre» no debe reiniciar la rotación.
+    .where(and(isNotNull(workout.endedAt), isNotNull(workout.routineDayId)))
     .orderBy(desc(workout.startedAt))
     .limit(1);
   return rows[0]?.dayId ?? null;

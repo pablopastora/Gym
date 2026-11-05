@@ -48,7 +48,7 @@ export function dayLabel(date: string, today: string): string {
   const d = diffDays(today, date);
   if (d === 0) return 'Hoy';
   if (d === 1) return 'Mañana';
-  if (d === -1) return 'Ayer';
+  // El resto (también los días pasados de la semana): nombre del día.
   return WEEKDAY_NAMES[weekdayOf(date) - 1];
 }
 

@@ -76,6 +76,27 @@
 
 **Atribuciones**: habrá una pantalla *Ajustes → Créditos y licencias* que lista free-exercise-db (Unlicense) y wger (CC-BY-SA, con autor y licencia de cada imagen o vídeo usado). En cada ficha se indica la fuente de su imagen.
 
+## 5. Revisión de noviembre de 2026: qué tienen las mejores apps y qué nos falta
+
+Fuentes revisadas: Hevy (novedades 2026), Strong, Fitbod, RP Hypertrophy, MacroFactor Workouts (lanzada en enero de 2026), Alpha Progression y Liftosaur.
+
+**Lo que ya tenemos y está a su nivel**: registro rápido con la última vez, descanso automático con aviso, doble progresión automática (Boostcamp Pro, Alpha Progression), descarga, récords, gráficas por ejercicio, peso con media móvil, medidas y fotos con comparador, ejercicios propios, plan semanal, kcal y sugerencias semanales de la rutina (equivalentes a la autorregulación de RP o Fitbod, pero transparentes).
+
+**Lo que nos falta**, por valor para un usuario en déficit:
+
+| Función | Quién la tiene | Valor | Coste |
+|---|---|---|---|
+| **Calculadora de discos** (qué discos poner en cada lado) | Strong Pro | Alto en básicos pesados; evita cálculos en el gimnasio | Bajo |
+| **Superseries** (2 ejercicios seguidos, un solo descanso) | Strong, Hevy, Boostcamp, Fitbod | Ahorra 15-20 min en días largos | Medio (la tabla ya tiene `superset_group`) |
+| **Mapa muscular semanal** (series por músculo frente al objetivo) | Fitbod, Strong | Ver de un vistazo qué músculo va corto | Bajo-medio (ya se calcula para las sugerencias) |
+| **Valoración por músculo al terminar** (congestión/agujetas/fatiga) que ajusta el volumen | RP Hypertrophy | Autorregulación más fina que solo con RIR | Medio |
+| **Compartir el entreno como texto** (para un entrenador o una IA) | Hevy (envío a ChatGPT/Claude) | Revisión externa sin cuentas | Bajo |
+| **Mancuernas «por mano» frente a peso total** | Hevy (en estudio) | Evita confusiones de volumen | Bajo |
+| **Sincronización con Health Connect** (peso de báscula, pasos) | MacroFactor, Hevy | Peso automático desde la báscula | Medio-alto (módulo nativo → nuevo APK) |
+| **Bloques/mesociclos de 4-6 semanas** con objetivos de volumen | RP, Alpha Progression | Periodización estructurada | Alto |
+| **Etiquetar el gimnasio/equipamiento disponible** | Fitbod, Hevy (en estudio) | Sustituciones automáticas si falta una máquina | Medio |
+| Reloj (Wear OS) / notificación con la serie actual | Hevy, Strong | Registrar sin sacar el móvil | Alto |
+
 ## Fuentes consultadas
 
 - [Hevy: temporizador de descanso](https://www.hevyapp.com/features/workout-rest-timer/) · [Hevy: Live Activity](https://www.hevyapp.com/features/live-activity/) · [Ayuda de Hevy: widget Live Activity](https://help.hevyapp.com/hc/en-us/articles/35649846517399) · [Hevy en el App Store](https://apps.apple.com/il/app/id1458862350)
@@ -84,4 +105,5 @@
 - [Cómo crea Fitbod tu entrenamiento](https://help.fitbod.me/hc/en-us/articles/360004429814-How-Fitbod-Creates-Your-Workout) · [Algoritmo de Fitbod](https://fitbod.me/blog/fitbod-algorithm) · [Reseña de Fitbod (Indie Hackers)](https://www.indiehackers.com/post/fitbod-app-review-2026-honest-take-after-real-testing-45d5f07a1b)
 - [¿Es gratis Boostcamp?](https://www.boostcamp.app/is-boostcamp-free) · [Reseña de Boostcamp](https://gainframe.app/blog/boostcamp-app-review/) · [Comparativa de Boostcamp](https://www.boostcamp.app/best/workout-apps)
 - [Comparativa en español (Sensai)](https://www.sensai.fit/es/blog/hevy-vs-strong-vs-fitbod-vs-jefit)
+- Revisión 2026: [Hevy, actualización julio 2026](https://www.hevyapp.com/community-updates/july-26/) · [RP Hypertrophy](https://rpstrength.com/hypertrophy-app) · [MacroFactor Workouts](https://macrofactorapp.com/workouts/) · [MacroFactor, enero 2026](https://macrofactor.com/mm-jan-2026/) · [Alpha Progression](https://alphaprogression.com/en/blog/best-strength-training-apps) · [Comparativa Jefit 2026](https://www.jefit.com/blog/fitbod-vs-strong-vs-jefit-vs-hevy)
 - [free-exercise-db](https://github.com/yuhonas/free-exercise-db) · [Documentación de wger](https://wger.readthedocs.io/) · [ExerciseDB API](https://github.com/exercisedb/exercisedb-api) · [ExerciseDB OSS](https://oss.exercisedb.dev/) · [Alternativa a ExerciseDB (dev.to)](https://dev.to/furkanuruk/i-built-a-free-exercisedb-alternative-1300-exercises-with-gif-animations-5868)

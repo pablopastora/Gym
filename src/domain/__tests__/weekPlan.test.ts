@@ -31,7 +31,7 @@ describe('utilidades', () => {
     expect(dayLabel('2026-11-03', '2026-11-03')).toBe('Hoy');
     expect(dayLabel('2026-11-04', '2026-11-03')).toBe('Mañana');
     expect(dayLabel('2026-11-05', '2026-11-03')).toBe('Jueves');
-    expect(dayLabel('2026-11-02', '2026-11-03')).toBe('Ayer');
+    expect(dayLabel('2026-11-02', '2026-11-03')).toBe('Lunes'); // pasado: nombre del día
   });
   it('días de entreno por defecto y personalizados', () => {
     expect(defaultTrainingWeekdays(4)).toEqual([1, 2, 4, 5]);
@@ -70,7 +70,7 @@ describe('plan semanal', () => {
 
   it('al cruzar la medianoche, el entreno de ayer queda completado y hoy toca el siguiente', () => {
     const p = plan('2026-11-03', [['2026-11-02', 1]]);
-    expect(p.days.find((d) => d.date === '2026-11-02')).toMatchObject({ label: 'Ayer', status: 'completado' });
+    expect(p.days.find((d) => d.date === '2026-11-02')).toMatchObject({ label: 'Lunes', status: 'completado' });
     expect(p.todayEntry).toMatchObject({ status: 'pendiente' });
     expect(p.todayEntry.session?.id).toBe(2);
   });

@@ -32,6 +32,12 @@ export const journal = {
       "when": 1793742064072,
       "tag": "0004_hoy_kcal_sugerencias",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "when": 1793865489085,
+      "tag": "0005_discos_superseries_plan",
+      "breakpoints": true
     }
   ]
 };
@@ -41,7 +47,8 @@ export const migrations: Record<string, string> = {
   "m0001": "ALTER TABLE `profile` ADD `effort_metric` text DEFAULT 'rir' NOT NULL;--> statement-breakpoint\nALTER TABLE `profile` ADD `bar_kg` real DEFAULT 20 NOT NULL;",
   "m0002": "ALTER TABLE `profile` ADD `deload_until` text;--> statement-breakpoint\nALTER TABLE `profile` ADD `deload_snooze_until` text;--> statement-breakpoint\nALTER TABLE `workout_exercise` ADD `progression_action` text;--> statement-breakpoint\nALTER TABLE `workout_exercise` ADD `progression_delta_kg` real;--> statement-breakpoint\nALTER TABLE `workout_exercise` ADD `progression_note` text;",
   "m0003": "ALTER TABLE `exercise` ADD `video_attribution` text;--> statement-breakpoint\nALTER TABLE `exercise` ADD `video_checked_at` integer;",
-  "m0004": "CREATE TABLE `routine_suggestion` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`week_start` text NOT NULL,\n\t`rule` text NOT NULL,\n\t`action` text NOT NULL,\n\t`routine_id` integer,\n\t`routine_day_id` integer,\n\t`routine_exercise_id` integer,\n\t`exercise_id` text,\n\t`suggested_exercise_id` text,\n\t`sets_delta` integer,\n\t`muscle` text,\n\t`reason` text NOT NULL,\n\t`status` text DEFAULT 'pendiente' NOT NULL,\n\t`applied_summary` text,\n\t`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,\n\t`decided_at` integer,\n\tFOREIGN KEY (`routine_id`) REFERENCES `routine`(`id`) ON UPDATE no action ON DELETE set null,\n\tFOREIGN KEY (`routine_day_id`) REFERENCES `routine_day`(`id`) ON UPDATE no action ON DELETE set null,\n\tFOREIGN KEY (`routine_exercise_id`) REFERENCES `routine_exercise`(`id`) ON UPDATE no action ON DELETE set null\n);\n--> statement-breakpoint\nCREATE INDEX `routine_suggestion_week_idx` ON `routine_suggestion` (`week_start`);--> statement-breakpoint\nALTER TABLE `cardio_session` ADD `kcal` real;--> statement-breakpoint\nALTER TABLE `profile` ADD `training_weekdays` text;--> statement-breakpoint\nALTER TABLE `workout` ADD `kcal` real;--> statement-breakpoint\nALTER TABLE `workout` ADD `met` real;"
+  "m0004": "CREATE TABLE `routine_suggestion` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`week_start` text NOT NULL,\n\t`rule` text NOT NULL,\n\t`action` text NOT NULL,\n\t`routine_id` integer,\n\t`routine_day_id` integer,\n\t`routine_exercise_id` integer,\n\t`exercise_id` text,\n\t`suggested_exercise_id` text,\n\t`sets_delta` integer,\n\t`muscle` text,\n\t`reason` text NOT NULL,\n\t`status` text DEFAULT 'pendiente' NOT NULL,\n\t`applied_summary` text,\n\t`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,\n\t`decided_at` integer,\n\tFOREIGN KEY (`routine_id`) REFERENCES `routine`(`id`) ON UPDATE no action ON DELETE set null,\n\tFOREIGN KEY (`routine_day_id`) REFERENCES `routine_day`(`id`) ON UPDATE no action ON DELETE set null,\n\tFOREIGN KEY (`routine_exercise_id`) REFERENCES `routine_exercise`(`id`) ON UPDATE no action ON DELETE set null\n);\n--> statement-breakpoint\nCREATE INDEX `routine_suggestion_week_idx` ON `routine_suggestion` (`week_start`);--> statement-breakpoint\nALTER TABLE `cardio_session` ADD `kcal` real;--> statement-breakpoint\nALTER TABLE `profile` ADD `training_weekdays` text;--> statement-breakpoint\nALTER TABLE `workout` ADD `kcal` real;--> statement-breakpoint\nALTER TABLE `workout` ADD `met` real;",
+  "m0005": "CREATE TABLE `day_override` (\n\t`date` text PRIMARY KEY NOT NULL,\n\t`training` integer NOT NULL\n);\n--> statement-breakpoint\nALTER TABLE `exercise` ADD `role_override` text;--> statement-breakpoint\nALTER TABLE `profile` ADD `available_plates` text;--> statement-breakpoint\nALTER TABLE `profile` ADD `auto_set_plan` integer DEFAULT true NOT NULL;--> statement-breakpoint\nALTER TABLE `profile` ADD `meso_start` text;--> statement-breakpoint\nALTER TABLE `routine_exercise` ADD `top_set` integer DEFAULT false NOT NULL;--> statement-breakpoint\nALTER TABLE `workout_exercise` ADD `role` text;--> statement-breakpoint\nALTER TABLE `workout_exercise` ADD `plan_note` text;--> statement-breakpoint\nALTER TABLE `workout_set` ADD `target_rir` real;"
 };
 
 const bundle = { journal, migrations };

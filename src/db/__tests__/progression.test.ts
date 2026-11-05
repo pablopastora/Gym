@@ -12,6 +12,8 @@ const T0 = Date.UTC(2026, 9, 5, 17); // lunes 5 oct 2026
 async function setup() {
   const { db } = createTestDb();
   await runSeed(db);
+  await db.update(profile).set({ autoSetPlan: false }); // modo manual
+
   const [day1] = await db.select().from(routineDay).orderBy(asc(routineDay.sortOrder)).limit(1);
   const getProfile = async () => (await db.select().from(profile))[0];
   return { db, day1, getProfile };

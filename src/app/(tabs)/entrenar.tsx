@@ -11,16 +11,19 @@ import { useAsyncQuery } from '@/hooks/useDb';
 import { useNow } from '@/hooks/useNow';
 import { useWeekPlan } from '@/hooks/useWeekPlan';
 import { deleteCardio, recentCardioQuery } from '@/repositories/cardio';
+import { clearWeekOverrides } from '@/repositories/plan';
 import { getActiveWorkout, recentWorkoutsQuery } from '@/repositories/workouts';
 import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
 import { BigButton, Card, EmptyState, ListRow, Row, SectionTitle, Screen, Txt } from '@/ui/components';
 import { colors, radius, space } from '@/ui/theme';
 import { showAlert } from '@/ui/alert';
+import { MoveDaySheet } from '@/ui/MoveDaySheet';
 import { PlanDayCard } from '@/ui/PlanDayCard';
 import { startSession } from '@/ui/sessionStart';
 
 export default function Entrenar() {
-  const { plan, routine, profile } = useWeekPlan();
+  const { plan, routine, profile, hasOverrides } = useWeekPlan();
+  const [moveFrom, setMoveFrom] = useState<string | null>(null);
   const { data: active } = useAsyncQuery('active-workout-summary', () => getActiveWorkout(db));
   const { data: history } = useAsyncQuery('recent-workouts', () => recentWorkoutsQuery(db, 15));
   const { data: cardio } = useLiveQuery(recentCardioQuery(db, 10));
@@ -62,8 +65,12 @@ export default function Entrenar() {
               profile={profile}
               onStart={active ? undefined : () => d.session && start(d.session.id)}
               onAdvance={active || !d.session ? undefined : () => advance(d.session!.id, d.session!.name, d.label)}
+              onMove={d.session && (d.status === 'pendiente' || d.status === 'programado') ? () => setMoveFrom(d.date) : undefined}
             />
           ))}
+          {hasOverrides ? (
+            <BigButton title="Deshacer cambios de esta semana" icon="undo" kind="ghost" onPress={() => clearWeekOverrides(db, plan.today)} />
+          ) : null}
           {plan.todayEntry.status === 'completado' && !active ? (
             <BigButton title="Empezar otra sesión hoy" icon="plus" kind="secondary" onPress={() => setAnother(true)} />
           ) : null}
@@ -127,6 +134,7 @@ export default function Entrenar() {
       ) : null}
       <View style={{ height: space.lg }} />
       <ActionSheet visible={another} title="Otra sesión hoy" actions={anotherActions} onClose={() => setAnother(false)} />
+      <MoveDaySheet plan={plan} from={moveFrom} hasOverrides={!!hasOverrides} onClose={() => setMoveFrom(null)} />
     </Screen>
   );
 }

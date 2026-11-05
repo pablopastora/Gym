@@ -12,6 +12,7 @@ import { getAllRecords } from '@/repositories/progress';
 import { MeasurementChart, WeightChart } from '@/ui/BodyCharts';
 import { BigButton, Card, ListRow, Row, SectionTitle, Screen, Segmented, Txt } from '@/ui/components';
 import { DeloadCard } from '@/ui/DeloadCard';
+import { MuscleMapCard } from '@/ui/MuscleMapCard';
 import { colors, radius, space } from '@/ui/theme';
 import { WeeklyKcal } from '@/ui/WeeklyKcal';
 import { WeeklySummary } from '@/ui/WeeklySummary';
@@ -93,6 +94,7 @@ function Fuerza() {
   const { data: records } = useAsyncQuery('progress-records', () => getAllRecords(db));
   return (
     <View style={{ gap: space.lg }}>
+      <MuscleMapCard />
       <DeloadCard compactWhenNone={false} />
       <SectionTitle
         right={records?.length ? <Txt variant="caption" color={colors.textFaint}>{`${records.length} ${records.length === 1 ? 'ejercicio' : 'ejercicios'}`}</Txt> : undefined}>

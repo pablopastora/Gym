@@ -109,6 +109,7 @@ export default function EditarEntreno() {
               isLast={i === w.exercises.length - 1}
               onToggleSet={onToggleSet}
               onSubstitute={(weId) => pickExercise((exerciseId) => substituteWorkoutExercise(db, weId, exerciseId, profile))}
+              bar={{ barKg: profile.barKg, plates: profile.availablePlates }}
             />
           ))}
           <BigButton title="Añadir ejercicio" icon="plus" kind="secondary" onPress={() => pickExercise((exerciseId) => addExerciseToWorkout(db, w.id, exerciseId, profile))} />

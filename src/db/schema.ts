@@ -52,6 +52,12 @@ export const profile = sqliteTable('profile', {
   deloadSnoozeUntil: text('deload_snooze_until'),
   /** Días de entreno de la semana (1 = lunes … 7 = domingo). null = según días/semana. */
   trainingWeekdays: text('training_weekdays', { mode: 'json' }).$type<number[]>(),
+  /** Discos disponibles (kg, de cada par). null = juego estándar. */
+  availablePlates: text('available_plates', { mode: 'json' }).$type<number[]>(),
+  /** Plan automático de series (tipo de serie, calentamientos, RIR objetivo). */
+  autoSetPlan: integer('auto_set_plan', { mode: 'boolean' }).notNull().default(true),
+  /** Lunes en que empezó el mesociclo actual (si no hay descarga previa). */
+  mesoStart: text('meso_start'),
   updatedAt: integer('updated_at'),
 });
 
@@ -133,6 +139,8 @@ export const exercise = sqliteTable(
     isFavorite: integer('is_favorite', { mode: 'boolean' }).notNull().default(false),
     isCustom: integer('is_custom', { mode: 'boolean' }).notNull().default(false),
     customPhotoFile: text('custom_photo_file'),
+    /** Rol elegido por el usuario (null = automático). */
+    roleOverride: text('role_override').$type<ExerciseRole>(),
     createdAt: createdAt(),
   },
   (t) => [index('exercise_name_idx').on(t.nameEs)],
@@ -182,6 +190,8 @@ export const routineExercise = sqliteTable(
     warmupSets: integer('warmup_sets').notNull().default(0),
     notes: text('notes'),
     supersetGroup: integer('superset_group'),
+    /** Básicos: serie top + series de descarga (−8 a −10 %). */
+    topSet: integer('top_set', { mode: 'boolean' }).notNull().default(false),
   },
   (t) => [index('routine_exercise_day_idx').on(t.routineDayId)],
 );
@@ -228,6 +238,9 @@ export const workoutExercise = sqliteTable(
     progressionNote: text('progression_note'),
     notes: text('notes'),
     supersetGroup: integer('superset_group'),
+    /** Rol usado por el plan automático y su explicación. */
+    role: text('role').$type<ExerciseRole>(),
+    planNote: text('plan_note'),
   },
   (t) => [
     index('workout_exercise_workout_idx').on(t.workoutId),
@@ -244,7 +257,9 @@ export type ProgressionAction =
   | 'lastre'
   | 'descarga';
 
-export type SetType = 'calentamiento' | 'normal' | 'fallo' | 'drop';
+/** «backoff»: serie de descarga tras la serie top (no cuenta para la progresión). */
+export type SetType = 'calentamiento' | 'normal' | 'fallo' | 'drop' | 'backoff';
+export type ExerciseRole = 'basico' | 'accesorio' | 'aislamiento';
 
 export const workoutSet = sqliteTable(
   'workout_set',
@@ -261,6 +276,8 @@ export const workoutSet = sqliteTable(
     rpe: real('rpe'),
     completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
     completedAt: integer('completed_at'),
+    /** RIR objetivo del plan automático. */
+    targetRir: real('target_rir'),
   },
   (t) => [index('workout_set_we_idx').on(t.workoutExerciseId)],
 );
@@ -315,6 +332,12 @@ export const cardioSession = sqliteTable(
   },
   (t) => [index('cardio_date_idx').on(t.date)],
 );
+
+/** Cambios puntuales del calendario: un día concreto pasa a ser de entreno o de descanso. */
+export const dayOverride = sqliteTable('day_override', {
+  date: text('date').primaryKey(),
+  training: integer('training', { mode: 'boolean' }).notNull(),
+});
 
 export const reminder = sqliteTable('reminder', {
   id: integer('id').primaryKey({ autoIncrement: true }),

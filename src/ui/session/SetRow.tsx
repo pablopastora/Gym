@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import type { WorkoutSet } from '@/db/schema';
 import { fmtNum, parseDecimal } from '@/domain/format';
+import { fmtRir } from '@/domain/setPlan';
 import type { LastSet } from '@/domain/workout';
 
 import { Txt } from '../components';
@@ -85,7 +86,7 @@ export function SetRow({
         {isRecord && done ? (
           <MaterialCommunityIcons name="trophy" size={24} color={colors.accentText} accessibilityLabel="Récord personal" />
         ) : (
-          <Txt variant="displayS" color={warm ? colors.warning : set.setType === 'normal' ? colors.text : colors.accentText}>
+          <Txt variant="displayS" color={warm ? colors.warning : set.setType === 'normal' ? colors.text : set.setType === 'backoff' ? colors.textDim : colors.accentText}>
             {label}
           </Txt>
         )}
@@ -121,7 +122,15 @@ export function SetRow({
           onChangeText={setEff}
           onEndEditing={commitIfChanged}
           keyboardType="decimal-pad"
-          placeholder={effort === 'rir' ? 'RIR' : 'RPE'}
+          placeholder={
+            set.targetRir != null
+              ? effort === 'rir'
+                ? fmtRir(set.targetRir)
+                : String(Math.round((10 - set.targetRir) * 2) / 2).replace('.', ',')
+              : effort === 'rir'
+                ? 'RIR'
+                : 'RPE'
+          }
           placeholderTextColor={colors.textFaint}
           selectTextOnFocus
           cursorColor={colors.accentText}

@@ -2,13 +2,14 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { Pressable, View } from 'react-native';
+import { Pressable, Share, View } from 'react-native';
 
 import { db } from '@/db/client';
 import { formatDateLong } from '@/domain/dates';
 import { fmtDuration, fmtNum } from '@/domain/format';
 import { RECORD_LABELS } from '@/domain/records';
 import { KCAL_EXPLANATION, STRENGTH_LEVEL_LABEL, type StrengthLevel } from '@/domain/kcal';
+import { workoutToText } from '@/domain/shareText';
 import { formatSets, summarizeSets } from '@/domain/workout';
 import { cardioSession } from '@/db/schema';
 import { useAsyncQuery } from '@/hooks/useDb';
@@ -122,6 +123,28 @@ export default function Resumen() {
 
       <View style={{ gap: space.md }}>
         <BigButton title="Listo" icon="check" onPress={() => router.dismissTo('/entrenar')} />
+        <BigButton
+          title="Compartir como texto"
+          icon="share-variant"
+          kind="secondary"
+          onPress={() =>
+            Share.share({
+              message: workoutToText({
+                name: w.name,
+                date: w.date,
+                startedAt: w.startedAt,
+                endedAt: w.endedAt,
+                kcal: totalKcal || null,
+                notes: notes ?? w.notes,
+                exercises: w.exercises.map((e) => ({ name: e.exercise.nameEs, notes: e.notes, supersetGroup: e.supersetGroup, sets: e.sets })),
+                records: (recs ?? []).map((r) => ({
+                  exercise: w.exercises.find((e) => e.exerciseId === r.exerciseId)?.exercise.nameEs ?? r.exerciseId,
+                  types: r.types,
+                })),
+              }),
+            }).catch(() => {})
+          }
+        />
         <BigButton
           title="Editar entreno"
           icon="pencil-outline"

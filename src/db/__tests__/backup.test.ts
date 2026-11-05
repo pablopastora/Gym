@@ -13,6 +13,7 @@ import { createTestDb } from '@/test/testDb';
 async function populated() {
   const { db } = createTestDb();
   await runSeed(db);
+  await db.update(profile).set({ autoSetPlan: false }); // modo manual (índices de series fijos)
   const [p] = await db.select().from(profile);
   const [day] = await db.select().from(routineDay).limit(1);
   const w = await startWorkoutFromDay(db, day.id, p, Date.UTC(2026, 10, 2, 18));

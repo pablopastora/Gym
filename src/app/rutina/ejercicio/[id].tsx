@@ -1,15 +1,17 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Switch, View } from 'react-native';
 
 import { db } from '@/db/client';
 import type { Profile, RoutineExercise } from '@/db/schema';
 import { resolveRest } from '@/domain/exerciseClassify';
 import { fmtRest } from '@/domain/session';
 import { useAsyncQuery, useProfile } from '@/hooks/useDb';
-import { deleteRoutineExercise, routineExerciseQuery, updateRoutineExercise } from '@/repositories/routines';
+import { setExerciseRole } from '@/repositories/exercises';
+import { deleteRoutineExercise, routineExerciseQuery, toggleRoutineSuperset, updateRoutineExercise } from '@/repositories/routines';
+import { defaultRole, recommendedScheme, resolveRole, ROLE_LABELS } from '@/domain/setPlan';
 import { pickExercise } from '@/stores/picker';
-import { BigButton, Chip, Field, Row, SectionTitle, Screen, Stepper, Txt } from '@/ui/components';
+import { BigButton, Card, Chip, Field, Row, SectionTitle, Screen, Stepper, Txt } from '@/ui/components';
 import { colors, space } from '@/ui/theme';
 import { showAlert } from '@/ui/alert';
 
@@ -26,7 +28,8 @@ export default function EditorEjercicioRutina() {
 }
 
 function Editor({ re, profile }: { re: Loaded; profile: Profile }) {
-  const [form, setForm] = useState<Pick<RoutineExercise, 'sets' | 'repMin' | 'repMax' | 'warmupSets' | 'restS'> & { notes: string }>({
+  const [form, setForm] = useState<Pick<RoutineExercise, 'sets' | 'repMin' | 'repMax' | 'warmupSets' | 'restS' | 'topSet'> & { notes: string }>({
+    topSet: re.topSet,
     sets: re.sets,
     repMin: re.repMin,
     repMax: re.repMax,
@@ -35,6 +38,8 @@ function Editor({ re, profile }: { re: Loaded; profile: Profile }) {
     notes: re.notes ?? '',
   });
   const set = (p: Partial<typeof form>) => setForm({ ...form, ...p });
+  const role = resolveRole(re.exercise);
+  const scheme = recommendedScheme(role, profile.deficitMode);
   const defaultRest = resolveRest(re.exercise.kind, profile, re.exercise.defaultRestS);
 
   const save = async () => {
@@ -49,6 +54,36 @@ function Editor({ re, profile }: { re: Loaded; profile: Profile }) {
         <Txt variant="h1">{re.exercise.nameEs}</Txt>
         <Txt color={colors.textDim}>{re.day.name}</Txt>
       </View>
+
+      <SectionTitle>Rol en el plan automático</SectionTitle>
+      <Row gap={space.sm} style={{ flexWrap: 'wrap' }}>
+        <Chip label={`Automático (${ROLE_LABELS[defaultRole(re.exercise)].toLowerCase()})`} active={re.exercise.roleOverride == null} onPress={() => setExerciseRole(db, re.exerciseId, null)} />
+        {(['basico', 'accesorio', 'aislamiento'] as const).map((r) => (
+          <Chip key={r} label={ROLE_LABELS[r]} active={re.exercise.roleOverride === r} onPress={() => setExerciseRole(db, re.exerciseId, r)} />
+        ))}
+      </Row>
+      <Txt variant="small" color={colors.textDim}>
+        {`Esquema recomendado: ${scheme.sets} × ${scheme.repMin}-${scheme.repMax}. El rol decide calentamientos, RIR objetivo y si se permite fallo/dropset (nunca en básicos). Se aplica a todas las rutinas.`}
+      </Txt>
+      <BigButton
+        title="Aplicar esquema recomendado"
+        icon="auto-fix"
+        kind="ghost"
+        onPress={() => set({ sets: scheme.sets, repMin: scheme.repMin, repMax: scheme.repMax })}
+      />
+      {role === 'basico' ? (
+        <Card>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <View style={{ flex: 1, gap: 4 }}>
+              <Txt variant="bodyBold">Serie top + series de descarga</Txt>
+              <Txt variant="small" color={colors.textDim}>
+                Una serie pesada y el resto un 9 % más ligeras. La progresión se mide en la serie top.
+              </Txt>
+            </View>
+            <Switch value={form.topSet} onValueChange={(v) => set({ topSet: v })} trackColor={{ true: colors.accent, false: colors.border }} thumbColor={colors.text} />
+          </Row>
+        </Card>
+      ) : null}
 
       <SectionTitle>Series y repeticiones</SectionTitle>
       <Stepper label="Series" value={form.sets} min={1} max={10} onChange={(v) => set({ sets: v })} />
@@ -82,6 +117,15 @@ function Editor({ re, profile }: { re: Loaded; profile: Profile }) {
       <Field label="Nota de técnica o ajuste" value={form.notes} onChangeText={(v) => set({ notes: v })} multiline placeholder="Ej.: asiento en posición 4, agarre neutro" />
 
       <BigButton title="Guardar" icon="content-save" onPress={save} />
+      <BigButton
+        title={re.supersetGroup != null ? 'Quitar superserie' : 'Superserie con el siguiente'}
+        icon="link-variant"
+        kind="secondary"
+        onPress={async () => {
+          await toggleRoutineSuperset(db, re.id);
+          router.back();
+        }}
+      />
       <BigButton
         title="Sustituir ejercicio"
         icon="swap-horizontal"

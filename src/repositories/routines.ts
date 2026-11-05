@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, isNotNull, max } from 'drizzle-orm';
 
-import { exercise, routine, routineDay, routineExercise, workout, type RoutineExercise } from '@/db/schema';
+import { exercise, profile, routine, routineDay, routineExercise, workout, type RoutineExercise } from '@/db/schema';
+import { recommendedScheme, resolveRole } from '@/domain/setPlan';
 import { moveItem } from '@/domain/workout';
 import type { AppDb } from '@/db/types';
 
@@ -140,25 +141,27 @@ export async function moveDay(db: AppDb, dayId: number, dir: -1 | 1) {
 
 export async function addRoutineExercise(db: AppDb, dayId: number, exerciseId: string) {
   const [ex] = await db.select().from(exercise).where(eq(exercise.id, exerciseId));
+  const [p] = await db.select({ deficit: profile.deficitMode }).from(profile).limit(1);
   const rows = await db.select({ id: routineExercise.id }).from(routineExercise).where(eq(routineExercise.routineDayId, dayId));
-  const compound = ex.kind === 'compuesto';
+  const role = resolveRole(ex);
+  const scheme = recommendedScheme(role, p?.deficit ?? true);
   const [re] = await db
     .insert(routineExercise)
     .values({
       routineDayId: dayId,
       exerciseId,
       sortOrder: rows.length,
-      sets: 3,
-      repMin: compound ? 6 : 10,
-      repMax: compound ? 10 : 15,
-      warmupSets: compound ? 1 : 0,
+      sets: scheme.sets,
+      repMin: scheme.repMin,
+      repMax: scheme.repMax,
+      warmupSets: role === 'basico' ? 2 : 0,
     })
     .returning({ id: routineExercise.id });
   return re.id;
 }
 
 export type RoutineExercisePatch = Partial<
-  Pick<RoutineExercise, 'sets' | 'repMin' | 'repMax' | 'restS' | 'warmupSets' | 'notes' | 'exerciseId'>
+  Pick<RoutineExercise, 'sets' | 'repMin' | 'repMax' | 'restS' | 'warmupSets' | 'notes' | 'exerciseId' | 'topSet'>
 >;
 
 export async function updateRoutineExercise(db: AppDb, id: number, patch: RoutineExercisePatch) {
@@ -185,4 +188,28 @@ export function routineExerciseQuery(db: AppDb, id: number) {
     where: eq(routineExercise.id, id),
     with: { exercise: true, day: true },
   });
+}
+
+/** Superserie con el siguiente ejercicio del día (o la deshace si ya lo era). */
+export async function toggleRoutineSuperset(db: AppDb, id: number) {
+  const [re] = await db.select().from(routineExercise).where(eq(routineExercise.id, id));
+  const rows = await db
+    .select()
+    .from(routineExercise)
+    .where(eq(routineExercise.routineDayId, re.routineDayId))
+    .orderBy(asc(routineExercise.sortOrder), asc(routineExercise.id));
+  const i = rows.findIndex((r) => r.id === id);
+  const next = rows[i + 1];
+  if (re.supersetGroup != null && next?.supersetGroup === re.supersetGroup) {
+    await db.update(routineExercise).set({ supersetGroup: null }).where(eq(routineExercise.id, next.id));
+    // Si el ejercicio se queda solo en su grupo, también se desagrupa.
+    const left = rows.filter((r) => r.supersetGroup === re.supersetGroup && r.id !== next.id);
+    if (left.length < 2) for (const r of left) await db.update(routineExercise).set({ supersetGroup: null }).where(eq(routineExercise.id, r.id));
+    return false;
+  }
+  if (!next) return false;
+  const group = re.supersetGroup ?? next.supersetGroup ?? Math.min(re.id, next.id);
+  await db.update(routineExercise).set({ supersetGroup: group }).where(eq(routineExercise.id, re.id));
+  await db.update(routineExercise).set({ supersetGroup: group }).where(eq(routineExercise.id, next.id));
+  return true;
 }

@@ -7,6 +7,7 @@ import { db } from '@/db/client';
 import { formatDateLong } from '@/domain/dates';
 import { fmtDuration, fmtNum } from '@/domain/format';
 import { setBeatsRecord, sessionBests } from '@/domain/records';
+import { afterSetInSuperset } from '@/domain/supersets';
 import { useAsyncQuery, useProfile } from '@/hooks/useDb';
 import { useNow } from '@/hooks/useNow';
 import { useScreenAwake } from '@/hooks/useScreenAwake';
@@ -124,8 +125,32 @@ export default function Sesion() {
     }
     await completeSet(db, setId, v);
     const s = we.sets.find((x) => x.id === setId);
-    const rest = s?.setType === 'calentamiento' ? Math.min(WARMUP_REST_S, we.restS ?? WARMUP_REST_S) : (we.restS ?? profile.restAccessoryS);
     const fresh = (await workoutDetailQuery(db, w.id)) ?? w;
+    const freshWe = fresh.exercises.find((e) => e.id === we.id) ?? we;
+    // Dropset: las caídas van seguidas, sin descanso.
+    const idx = freshWe.sets.findIndex((x) => x.id === setId);
+    const nextInExercise = freshWe.sets.slice(idx + 1).find((x) => !x.completed);
+    if (nextInExercise?.setType === 'drop') {
+      setToast(`Dropset: baja a ${nextInExercise.weightKg != null ? `${fmtNum(nextInExercise.weightKg, 2)} kg` : 'menos peso'} sin descansar`);
+      return;
+    }
+    // Superserie: pasar al siguiente ejercicio del grupo; el descanso llega al cerrar la ronda.
+    if (s?.setType !== 'calentamiento') {
+      const decision = afterSetInSuperset(
+        fresh.exercises.map((e) => ({ id: e.id, name: e.exercise.nameEs, supersetGroup: e.supersetGroup, restS: e.restS, sets: e.sets })),
+        we.id,
+        setId,
+      );
+      if (decision.kind === 'siguiente') {
+        setToast(`Superserie: ahora ${decision.label}`);
+        return;
+      }
+      if (we.supersetGroup != null) {
+        startRest(decision.restS ?? we.restS ?? profile.restAccessoryS, nextSetLabel(fresh, setId));
+        return;
+      }
+    }
+    const rest = s?.setType === 'calentamiento' ? Math.min(WARMUP_REST_S, we.restS ?? WARMUP_REST_S) : (we.restS ?? profile.restAccessoryS);
     startRest(rest, nextSetLabel(fresh, setId));
   };
 
@@ -217,6 +242,7 @@ export default function Sesion() {
               isLast={i === w.exercises.length - 1}
               onToggleSet={onToggleSet}
               onSubstitute={onSubstitute}
+              bar={{ barKg: profile.barKg, plates: profile.availablePlates }}
             />
           ))}
           <BigButton title="Añadir ejercicio" icon="plus" kind="secondary" onPress={onAddExercise} />
@@ -245,7 +271,7 @@ export default function Sesion() {
             gap: space.sm,
             alignItems: 'center',
           }}>
-          <Icon name="trophy" color={colors.onAccent} />
+          <Icon name={toast.startsWith('¡Nuevo récord') ? 'trophy' : toast.startsWith('Superserie') ? 'link-variant' : 'arrow-down-bold'} color={colors.onAccent} />
           <Txt variant="bodyBold" color={colors.onAccent} style={{ flex: 1 }}>
             {toast}
           </Txt>

@@ -16,6 +16,8 @@ App Android personal (un solo usuario, sin cuentas) para registrar entrenamiento
 - **Plan semanal**: Hoy, Mañana y el resto de días con sus ejercicios. Se marcan los días completados, de descanso y no entrenados. Puedes adelantar una sesión o hacer otra el mismo día, y editar un entreno ya terminado.
 - **Kcal estimadas** de cada entreno y cardio (MET × peso × horas, ±25 %), con el total semanal en Inicio y una gráfica en Progreso.
 - **Sugerencias semanales** de ajuste de la rutina (refuerzo, avance, equilibrio), que solo se aplican si las aceptas, con historial de cambios.
+- **Calculadora de discos**, **mover un día** con un toque, **mapa muscular semanal**, **compartir el entreno como texto** y **superseries**.
+- **Plan de series automático** según el rol del ejercicio (básico, accesorio, aislamiento): calentamientos, serie top + descarga, fallo/dropset limitados, RIR objetivo por semana de un mesociclo de 4 semanas y un «?» que explica cada serie. Se puede desactivar en Ajustes.
 
 ## Estado por fases
 

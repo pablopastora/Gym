@@ -94,6 +94,8 @@ export function buildWeekPlan<D extends DayRef>(input: {
   /** Día de rutina del último entreno terminado (cualquier fecha). */
   lastDoneDayId: number | null;
   doneByDate: Map<string, DoneWorkout[]>;
+  /** Cambios puntuales: fecha → día de entreno (true) o de descanso (false). */
+  overrides?: Map<string, boolean>;
 }): WeekPlan<D> {
   const { today, routineDays, daysPerWeek, doneByDate } = input;
   const training = new Set(input.trainingWeekdays);
@@ -109,7 +111,7 @@ export function buildWeekPlan<D extends DayRef>(input: {
   const days: PlanDay<D>[] = [];
   for (let d = start; d <= end; d = addDays(d, 1)) {
     const workouts = doneByDate.get(d) ?? [];
-    const isTraining = training.has(weekdayOf(d));
+    const isTraining = input.overrides?.get(d) ?? training.has(weekdayOf(d));
     const base = { date: d, label: dayLabel(d, today), isToday: d === today, workouts };
     if (d < today) {
       days.push({ ...base, status: workouts.length ? 'completado' : isTraining ? 'perdido' : 'descanso', session: null });
@@ -129,4 +131,9 @@ export function buildWeekPlan<D extends DayRef>(input: {
   const todayEntry = days.find((x) => x.isToday)!;
   const next = days.find((x) => x.date >= today && (x.status === 'pendiente' || x.status === 'programado')) ?? null;
   return { today, days, todayEntry, next, nextSessionNow };
+}
+
+/** Siguiente día de descanso (sin entreno hecho) después de `date`, dentro del plan. */
+export function nextFreeDay<D extends DayRef>(plan: WeekPlan<D>, date: string): string | null {
+  return plan.days.find((d) => d.date > date && d.status === 'descanso' && !d.workouts.length)?.date ?? null;
 }

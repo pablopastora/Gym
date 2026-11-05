@@ -30,6 +30,8 @@ import { createTestDb } from '@/test/testDb';
 async function setup() {
   const { db } = createTestDb();
   await runSeed(db);
+  // Estos tests cubren el modo manual (calentamientos según la rutina).
+  await db.update(profile).set({ autoSetPlan: false });
   const [p] = await db.select().from(profile);
   const [day1] = await db.select().from(routineDay).orderBy(asc(routineDay.sortOrder)).limit(1);
   return { db, p, day1 };
@@ -147,7 +149,7 @@ describe('editor de rutinas', () => {
     let r = await routineWithDaysQuery(db, rid);
     expect(r!.days.map((d) => d.name)).toEqual(['Día 1', 'Día 2']);
     expect(r!.days[0].exercises.map((e) => e.exerciseId)).toEqual(['Leg_Extensions', 'Barbell_Squat']);
-    expect(r!.days[0].exercises[1]).toMatchObject({ sets: 3, repMin: 6, repMax: 10, warmupSets: 1 });
+    expect(r!.days[0].exercises[1]).toMatchObject({ sets: 3, repMin: 5, repMax: 8, warmupSets: 2 }); // esquema de «básico» en déficit
 
     const copy = await duplicateRoutine(db, rid);
     r = await routineWithDaysQuery(db, copy);

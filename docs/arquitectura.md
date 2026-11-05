@@ -98,6 +98,23 @@
   - **Aplicación**: al aceptar se modifica la rutina. Si la rutina ha cambiado desde entonces, la sugerencia caduca. El historial (aceptadas, rechazadas y caducadas, con su motivo) está en *Rutinas → Historial de cambios sugeridos*.
 - **Migración 0004** (aditiva): `routine_suggestion`, `profile.training_weekdays`, `workout.kcal/met` y `cardio_session.kcal`. La nueva tabla se incluye en la copia de seguridad.
 
+## Ronda 2: discos, mover día, mapa muscular, compartir y superseries
+
+- **Calculadora de discos** (`src/domain/plates.ts`, `src/ui/PlateSheet.tsx`): reparto voraz por lado según la barra del perfil y los discos disponibles (*Ajustes → Entrenamiento*, por defecto 25/20/15/10/5/2,5/1,25). Avisa si el peso no es exacto o queda por debajo de la barra. Se abre desde el menú del ejercicio.
+- **Mover un día** (`src/ui/MoveDaySheet.tsx`, tabla `day_override`): «A mañana» o «Al siguiente día libre» marca el día de origen como descanso y el destino como entreno; la rotación se mantiene. «Deshacer cambios» borra los ajustes de la semana.
+- **Mapa muscular semanal** (`src/domain/muscleMap.ts`): series efectivas por grupo (principal 1, secundario 0,5) frente al objetivo semanal. Está arriba en *Progreso → Fuerza*.
+- **Compartir como texto** (`src/domain/shareText.ts`): desde el resumen del entreno, con `Share` de React Native (sin módulo nativo nuevo).
+- **Superseries** (`src/domain/supersets.ts`): `superset_group` en rutina y sesión. Tras una serie se pasa al otro ejercicio sin descanso; al cerrar la ronda descansa el máximo del grupo.
+
+## Ronda 3: plan de series automático
+
+- **Rol del ejercicio** (`src/domain/setPlan.ts`): básico pesado, accesorio o aislamiento, deducido del ejercicio y editable (`exercise.role_override`). Esquemas: básico 3-4×5-8 (3 en déficit), accesorio 3×8-12, aislamiento 3×12-15. Se aplican al añadir el ejercicio o con «Aplicar esquema recomendado»; el plan no cambia series, rangos ni pesos de la rutina ni de la progresión.
+- **Tipos de serie automáticos**: calentamiento 40/60/80 % solo en el primer básico de cada grupo muscular; serie top + descarga (−9 %, redondeado a 2,5 kg) opcional por básico; fallo o dropset (−22 % y −40 %, uno solo en déficit) solo en la última serie de aislamientos o máquinas, nunca en básicos ni en movimientos de riesgo, y como mucho 2 por sesión (1 en déficit, 0 en semana 1, semana 4 y descarga). Las lesiones del perfil bloquean las técnicas en los grupos afectados.
+- **Mesociclo de 4 semanas**: RIR objetivo por semana y rol (S1 ≈3, S2 ≈2, S3 ≈1-2, S4 descarga). La semana 4 activa la descarga existente. Tras un fallo o RIR 0 en un básico, la sesión siguiente sube 1 el RIR objetivo y no hace serie top. «Empezar mesociclo esta semana» reinicia la cuenta.
+- **Explicación**: el «?» de cada ejercicio muestra el porqué del esquema y de cada serie (`workout_exercise.plan_note`). El RIR objetivo sale como placeholder en la serie (`workout_set.target_rir`).
+- **Modo manual**: *Ajustes → Entrenamiento → Plan automático de series* (activo por defecto). Desactivado, la sesión se crea como antes. Las series ya hechas nunca se modifican.
+- **Migración 0005** (aditiva): `profile.available_plates/auto_set_plan/meso_start`, `exercise.role_override`, `routine_exercise.top_set`, `workout_exercise.role/plan_note`, `workout_set.target_rir` y la tabla `day_override` (incluida en la copia de seguridad).
+
 ---
 
 # Propuesta original (fase 0)

@@ -1,6 +1,8 @@
 import { and, asc, desc, eq, gte, isNotNull, ne } from 'drizzle-orm';
 
 import { exercise, profile, workout, workoutExercise, workoutSet, type Profile } from '@/db/schema';
+import { weeklyMuscleMap } from '@/domain/muscleMap';
+import { mesoWeek } from '@/domain/setPlan';
 import type { AppDb } from '@/db/types';
 import { addDays, diffDays } from '@/domain/dates';
 import { deloadStatus, stallCount, type HistSession, type ProgressionConfig } from '@/domain/progression';
@@ -184,8 +186,10 @@ export async function getDeloadStatus(db: AppDb, p: Profile, today: string) {
     );
   const avgRir = rirRows.length >= 6 ? rirRows.reduce((a, r) => a + (r.rir ?? 0), 0) / rirRows.length : null;
 
+  const meso = p.autoSetPlan ? mesoWeek(today, { lastDeloadDate: p.lastDeloadDate, mesoStart: p.mesoStart, firstWorkoutDate: first?.date ?? null }) : null;
   return deloadStatus(
     {
+      mesoWeek: meso,
       today,
       sinceDate,
       deloadUntil: p.deloadUntil,
@@ -211,4 +215,16 @@ export async function endDeload(db: AppDb) {
 
 export async function snoozeDeload(db: AppDb, today: string, days = 7) {
   await db.update(profile).set({ deloadSnoozeUntil: addDays(today, days) }).where(eq(profile.id, 1));
+}
+
+/** Series de trabajo completadas por grupo muscular desde `from` (mapa muscular semanal). */
+export async function muscleMapSince(db: AppDb, from: string) {
+  const rows = await db
+    .select({ primary: exercise.primaryMuscles, secondary: exercise.secondaryMuscles, setType: workoutSet.setType })
+    .from(workoutSet)
+    .innerJoin(workoutExercise, eq(workoutExercise.id, workoutSet.workoutExerciseId))
+    .innerJoin(workout, eq(workout.id, workoutExercise.workoutId))
+    .innerJoin(exercise, eq(exercise.id, workoutExercise.exerciseId))
+    .where(and(gte(workout.date, from), eq(workoutSet.completed, true), ne(workoutSet.setType, 'calentamiento')));
+  return weeklyMuscleMap(rows.map((r) => ({ primaryMuscles: r.primary, secondaryMuscles: r.secondary, sets: 1 })));
 }

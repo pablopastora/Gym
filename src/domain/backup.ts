@@ -30,6 +30,7 @@ export const BACKUP_TABLES = [
   'cardioSession',
   'reminder',
   'routineSuggestion',
+  'dayOverride',
 ] as const;
 
 export type BackupTable = (typeof BACKUP_TABLES)[number];

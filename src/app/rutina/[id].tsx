@@ -171,12 +171,17 @@ function DayBlock({
         const rest = resolveRest(e.exercise.kind, profile, e.exercise.defaultRestS, e.restS);
         const warm = e.warmupSets ? ` + ${e.warmupSets} cal.` : '';
         return (
-          <View key={e.id} style={styles.exRow}>
+          <View key={e.id} style={[styles.exRow, e.supersetGroup != null && styles.ssRow]}>
             <Pressable
               style={({ pressed }) => [{ flex: 1, paddingVertical: space.sm, gap: 2 }, pressed && { opacity: 0.7 }]}
               onPress={() => router.push({ pathname: '/rutina/ejercicio/[id]', params: { id: e.id } })}>
               <Txt variant="bodyBold">{e.exercise.nameEs}</Txt>
-              <Txt variant="small" color={colors.textDim}>{`${e.sets} × ${e.repMin}-${e.repMax}${warm} · ${fmtRest(rest)}`}</Txt>
+              <Txt variant="small" color={colors.textDim}>{`${e.sets} × ${e.repMin}-${e.repMax}${warm} · ${fmtRest(rest)}${e.topSet ? ' · serie top' : ''}`}</Txt>
+              {e.supersetGroup != null ? (
+                <Txt variant="caption" color={colors.accentText}>
+                  Superserie
+                </Txt>
+              ) : null}
             </Pressable>
             <IconButton
               name="chevron-up"
@@ -240,6 +245,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.sm,
     height: 44,
   },
+  ssRow: { borderLeftWidth: 3, borderLeftColor: colors.accent, paddingLeft: space.sm },
   exRow: {
     flexDirection: 'row',
     alignItems: 'center',

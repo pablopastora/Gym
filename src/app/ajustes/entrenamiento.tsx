@@ -7,7 +7,10 @@ import type { Profile } from '@/db/schema';
 import { parseDecimal } from '@/domain/format';
 import { useProfile } from '@/hooks/useDb';
 import { updateProfile } from '@/repositories/profile';
+import { startOfWeek, toISODate } from '@/domain/dates';
+import { DEFAULT_PLATES } from '@/domain/plates';
 import { defaultTrainingWeekdays, resolveTrainingWeekdays, WEEKDAY_NAMES } from '@/domain/weekPlan';
+import { showAlert } from '@/ui/alert';
 import { BigButton, Card, Chip, Field, Row, SectionTitle, Screen, Segmented, Txt } from '@/ui/components';
 import { colors, space } from '@/ui/theme';
 
@@ -22,6 +25,8 @@ type Form = {
   restAccessory: string;
   restAbs: string;
   deficitMode: boolean;
+  autoSetPlan: boolean;
+  plates: number[];
 };
 
 const s = (n: number) => String(n).replace('.', ',');
@@ -43,6 +48,8 @@ function EntrenamientoForm({ p }: { p: Profile }) {
     restAccessory: s(p.restAccessoryS),
     restAbs: s(p.restAbsS),
     deficitMode: p.deficitMode,
+    autoSetPlan: p.autoSetPlan,
+    plates: p.availablePlates ?? DEFAULT_PLATES,
   }));
 
   const set = (patch: Partial<Form>) => setForm({ ...form, ...patch });
@@ -78,6 +85,8 @@ function EntrenamientoForm({ p }: { p: Profile }) {
       restAccessoryS: parseDecimal(form.restAccessory)!,
       restAbsS: parseDecimal(form.restAbs)!,
       deficitMode: form.deficitMode,
+      autoSetPlan: form.autoSetPlan,
+      availablePlates: form.plates,
     });
     router.back();
   };
@@ -109,6 +118,57 @@ function EntrenamientoForm({ p }: { p: Profile }) {
       <Txt variant="small" color={colors.textDim}>
         {`${form.weekdays.length} días por semana. El resto son días de descanso. Con menos de 5 días se salta el día opcional de la rutina.`}
       </Txt>
+
+      <SectionTitle>Plan automático de series</SectionTitle>
+      <Card>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <View style={{ flex: 1, gap: 4 }}>
+            <Txt variant="bodyBold">{form.autoSetPlan ? 'Activado' : 'Modo manual'}</Txt>
+            <Txt variant="small" color={colors.textDim}>
+              La app decide calentamientos (solo en el primer básico de cada músculo), RIR objetivo por semana del mesociclo
+              (S1 RIR 3, S2 RIR 2, S3 RIR 1-2, S4 descarga) y cuándo usar al fallo o dropset (solo en aislamientos y máquinas,
+              máx. 2 por sesión; 1 en déficit). En modo manual se usan los calentamientos de la rutina y nada más.
+            </Txt>
+          </View>
+          <Switch
+            value={form.autoSetPlan}
+            onValueChange={(v) => set({ autoSetPlan: v })}
+            trackColor={{ true: colors.accent, false: colors.border }}
+            thumbColor={colors.text}
+          />
+        </Row>
+        {form.autoSetPlan ? (
+          <BigButton
+            title="Empezar mesociclo esta semana (semana 1)"
+            icon="restart"
+            kind="ghost"
+            onPress={() =>
+              showAlert('Reiniciar mesociclo', 'Esta semana pasará a ser la semana 1 de 4 (RIR 3).', [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Reiniciar', onPress: () => updateProfile(db, { mesoStart: startOfWeek(toISODate()) }) },
+              ])
+            }
+          />
+        ) : null}
+      </Card>
+
+      <SectionTitle>Discos disponibles (calculadora)</SectionTitle>
+      <Row gap={space.sm} style={{ flexWrap: 'wrap' }}>
+        {[25, 20, 15, 10, 5, 2.5, 1.25, 0.5].map((pl) => {
+          const on = form.plates.includes(pl);
+          return (
+            <Chip
+              key={pl}
+              label={`${String(pl).replace('.', ',')} kg`}
+              active={on}
+              onPress={() => {
+                const next = on ? form.plates.filter((x) => x !== pl) : [...form.plates, pl].sort((a, b) => b - a);
+                if (next.length) set({ plates: next });
+              }}
+            />
+          );
+        })}
+      </Row>
 
       <SectionTitle>Esfuerzo por serie</SectionTitle>
       <Segmented

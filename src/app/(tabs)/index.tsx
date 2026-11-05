@@ -12,7 +12,10 @@ import { useAsyncQuery } from '@/hooks/useDb';
 import { useWeekPlan } from '@/hooks/useWeekPlan';
 import { weightsQuery } from '@/repositories/body';
 import { getActiveWorkout, workoutsOnDateQuery } from '@/repositories/workouts';
+import { MESO_WEEK_LABELS } from '@/domain/setPlan';
+import { useMesoWeek } from '@/hooks/useMesoWeek';
 import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
+import { MoveDaySheet } from '@/ui/MoveDaySheet';
 import { Banner, BigButton, Card, Icon, Row, SectionTitle, Screen, Stat, Txt } from '@/ui/components';
 import { SessionPreview, sessionMinutes } from '@/ui/PlanDayCard';
 import { startSession } from '@/ui/sessionStart';
@@ -26,7 +29,9 @@ import { showAlert } from '@/ui/alert';
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function Inicio() {
-  const { plan, profile, today: todayIso } = useWeekPlan();
+  const { plan, profile, today: todayIso, hasOverrides } = useWeekPlan();
+  const [moveFrom, setMoveFrom] = useState<string | null>(null);
+  const meso = useMesoWeek(profile, todayIso);
   const { data: active } = useAsyncQuery('active-workout-home', () => getActiveWorkout(db));
   const { data: weights } = useLiveQuery(weightsQuery(db));
   const { data: doneToday } = useLiveQuery(workoutsOnDateQuery(db, todayIso), [todayIso]);
@@ -104,8 +109,14 @@ export default function Inicio() {
           </Txt>
           <Txt variant="h1">{todayEntry.session.name}</Txt>
           <Txt color={colors.textDim}>{`${todayEntry.session.exercises.length} ejercicios · ~${sessionMinutes(todayEntry.session, profile)} min`}</Txt>
+          {meso ? (
+            <Txt variant="caption" color={colors.textFaint}>
+              {`Plan automático · ${MESO_WEEK_LABELS[meso]}`}
+            </Txt>
+          ) : null}
           <SessionPreview day={todayEntry.session} profile={profile} />
           <BigButton title="Empezar entrenamiento" icon="play" onPress={() => start(todayEntry.session!.id)} />
+          <BigButton title="Hoy no puedo · mover" icon="calendar-arrow-right" kind="ghost" onPress={() => setMoveFrom(todayIso)} />
         </Card>
       ) : (
         <Card>
@@ -175,6 +186,7 @@ export default function Inicio() {
         )}
       </Card>
       <ActionSheet visible={another} title="Otra sesión hoy" actions={anotherActions} onClose={() => setAnother(false)} />
+      <MoveDaySheet plan={plan} from={moveFrom} hasOverrides={!!hasOverrides} onClose={() => setMoveFrom(null)} />
     </Screen>
   );
 }

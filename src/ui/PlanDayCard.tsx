@@ -64,11 +64,14 @@ export function PlanDayCard({
   profile,
   onStart,
   onAdvance,
+  onMove,
 }: {
   entry: PlanDay<PlanRoutineDay>;
   profile: Profile;
   onStart?: () => void;
   onAdvance?: () => void;
+  /** Mover esta sesión a otro día. */
+  onMove?: () => void;
 }) {
   const [open, setOpen] = useState(entry.isToday);
   const info = STATUS_INFO[entry.status];
@@ -131,7 +134,12 @@ export function PlanDayCard({
           </Pressable>
           {open ? <SessionPreview day={session} profile={profile} /> : null}
           {isTodayPending && onStart ? <BigButton title="Empezar entrenamiento" icon="play" onPress={onStart} /> : null}
-          {!entry.isToday && onAdvance ? <BigButton title="Adelantar a hoy" icon="fast-forward" kind="ghost" onPress={onAdvance} /> : null}
+          <Row gap={space.sm}>
+            {!entry.isToday && onAdvance ? (
+              <BigButton title="Adelantar" icon="fast-forward" kind="ghost" style={{ flex: 1, paddingHorizontal: space.sm }} onPress={onAdvance} />
+            ) : null}
+            {onMove ? <BigButton title="Mover" icon="calendar-arrow-right" kind="ghost" style={{ flex: 1, paddingHorizontal: space.sm }} onPress={onMove} /> : null}
+          </Row>
         </>
       ) : entry.status === 'descanso' && !entry.workouts.length ? (
         <Txt variant="small" color={colors.textFaint}>

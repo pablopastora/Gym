@@ -220,6 +220,8 @@ export interface DeloadInput {
   stalledExercises: number;
   /** RIR medio de las series de los últimos 7 días (null si no se registró). */
   avgRirLastWeek: number | null;
+  /** Semana del mesociclo del plan automático (null si está desactivado). */
+  mesoWeek?: number | null;
 }
 
 export function deloadStatus(i: DeloadInput, diffDays: (a: string, b: string) => number) {
@@ -227,6 +229,7 @@ export function deloadStatus(i: DeloadInput, diffDays: (a: string, b: string) =>
   if (!i.sinceDate) return { state: 'no' as DeloadState, weeks: 0, reason: '' };
   const weeks = Math.floor(diffDays(i.sinceDate, i.today) / 7);
   if (i.snoozeUntil && i.snoozeUntil > i.today) return { state: 'no' as DeloadState, weeks, reason: '' };
+  if (i.mesoWeek === 4) return { state: 'recomendada' as DeloadState, weeks, reason: 'Semana 4 del mesociclo: toca descarga para recuperar y empezar el siguiente bloque.' };
   if (weeks >= 8) return { state: 'recomendada' as DeloadState, weeks, reason: `Llevas ${weeks} semanas sin descargar.` };
   if (i.stalledExercises >= 3 && i.stalledRatio >= 0.3)
     return {

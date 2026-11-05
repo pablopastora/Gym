@@ -14,7 +14,9 @@ import {
 import type { AppDb } from '@/db/types';
 import { toISODate } from '@/domain/dates';
 import { resolveRest } from '@/domain/exerciseClassify';
-import { deloadSets, suggestProgression, type Suggestion } from '@/domain/progression';
+import { groupOf } from '@/domain/adapt';
+import { deloadSets, sessionStats, suggestProgression, type Suggestion } from '@/domain/progression';
+import { mesoWeek, needsConservative, planSession, recommendedScheme, resolveRole, type PlanCtx, type PlanItem } from '@/domain/setPlan';
 import { moveItem, planExerciseSets, roundTo, type LastSet, type PlannedSet } from '@/domain/workout';
 
 import { computeWorkoutKcal } from './kcal';
@@ -25,7 +27,18 @@ export const WARMUP_REST_S = 60;
 
 type RestProfile = Pick<
   Profile,
-  'restCompoundS' | 'restAccessoryS' | 'restAbsS' | 'barKg' | 'incrementUpperKg' | 'incrementLowerKg' | 'deficitMode' | 'deloadUntil'
+  | 'restCompoundS'
+  | 'restAccessoryS'
+  | 'restAbsS'
+  | 'barKg'
+  | 'incrementUpperKg'
+  | 'incrementLowerKg'
+  | 'deficitMode'
+  | 'deloadUntil'
+  | 'autoSetPlan'
+  | 'injuries'
+  | 'lastDeloadDate'
+  | 'mesoStart'
 >;
 
 /** ¿La sesión que empieza hoy es de descarga? */
@@ -84,29 +97,33 @@ function warmupOpts(ex: Pick<Exercise, 'equipment'>, profile: RestProfile) {
   return { minKg: ex.equipment === 'barbell' ? profile.barKg : 0, step: 2.5 };
 }
 
-async function insertPlannedExercise(
-  db: AppDb,
-  params: {
-    workoutId: number;
-    ex: Exercise;
-    sortOrder: number;
-    sets: number;
-    warmupSets: number;
-    repMin: number;
-    repMax: number;
-    restS: number | null;
-    notes: string | null;
-    profile: RestProfile;
-    deload: boolean;
-  },
-) {
+interface PrepareParams {
+  workoutId: number;
+  ex: Exercise;
+  sortOrder: number;
+  sets: number;
+  warmupSets: number;
+  repMin: number;
+  repMax: number;
+  restS: number | null;
+  notes: string | null;
+  profile: RestProfile;
+  deload: boolean;
+  topSet?: boolean;
+  supersetGroup?: number | null;
+}
+
+/** Calcula (sin guardar) las series de un ejercicio con la doble progresión de siempre. */
+async function prepareExercise(db: AppDb, params: PrepareParams) {
   const { workoutId, ex, profile, deload } = params;
+  const role = resolveRole(ex);
+  // Con serie top, la progresión se mide solo en la serie top.
+  const topSet = !!params.topSet && role === 'basico' && profile.autoSetPlan && !deload;
   const last = await getLastPerformance(db, ex.id, workoutId);
   const history = (await getExerciseHistory(db, ex.id, { excludeWorkoutId: workoutId })).slice(-8);
+  const cfg = { sets: topSet ? 1 : params.sets, repMin: params.repMin, repMax: params.repMax };
   const suggestion = suggestProgression(history, {
-    sets: params.sets,
-    repMin: params.repMin,
-    repMax: params.repMax,
+    ...cfg,
     region: ex.bodyRegion,
     incUpper: profile.incrementUpperKg,
     incLower: profile.incrementLowerKg,
@@ -119,9 +136,15 @@ async function insertPlannedExercise(
     warmupOpts(ex, profile),
     params.warmupSets,
   );
-  const [we] = await db
-    .insert(workoutExercise)
-    .values({
+  const lastStats = history.length ? sessionStats(history[history.length - 1], cfg) : null;
+  return {
+    ex,
+    role,
+    topSet,
+    plan,
+    working: plan.filter((s) => s.setType !== 'calentamiento'),
+    conservative: needsConservative(role, lastStats),
+    values: {
       workoutId,
       exerciseId: ex.id,
       sortOrder: params.sortOrder,
@@ -129,18 +152,67 @@ async function insertPlannedExercise(
       repMax: params.repMax,
       restS: resolveRest(ex.kind, profile, ex.defaultRestS, params.restS),
       notes: params.notes,
-      targetWeightKg: deload ? (suggestion.weightKg ?? null) : suggestion.weightKg,
-      progressionAction: deload ? 'descarga' : suggestion.action,
+      supersetGroup: params.supersetGroup ?? null,
+      targetWeightKg: suggestion.weightKg,
+      progressionAction: deload ? ('descarga' as const) : suggestion.action,
       progressionDeltaKg: deload ? 0 : suggestion.deltaKg,
       progressionNote: deload
         ? 'Semana de descarga: la mitad de series, mismo peso y sin ir al fallo (deja 3 reps en reserva).'
         : suggestion.note,
-    })
+    },
+  };
+}
+
+type Prepared = Awaited<ReturnType<typeof prepareExercise>>;
+
+async function insertPrepared(db: AppDb, p: Prepared, sets: (PlannedSet & { targetRir?: number | null })[], planNote: string | null) {
+  const [we] = await db
+    .insert(workoutExercise)
+    .values({ ...p.values, role: p.role, planNote })
     .returning({ id: workoutExercise.id });
   await db.insert(workoutSet).values(
-    plan.map((s, i) => ({ workoutExerciseId: we.id, sortOrder: i, setType: s.setType, weightKg: s.weightKg, reps: s.reps })),
+    sets.map((s, i) => ({ workoutExerciseId: we.id, sortOrder: i, setType: s.setType, weightKg: s.weightKg, reps: s.reps, targetRir: s.targetRir ?? null })),
   );
   return we.id;
+}
+
+/** Contexto del plan automático (semana del mesociclo, déficit, lesiones…). */
+async function planContext(db: AppDb, profile: RestProfile, date: string, deload: boolean): Promise<PlanCtx> {
+  const [first] = await db.select({ date: workout.date }).from(workout).where(isNotNull(workout.endedAt)).orderBy(asc(workout.startedAt)).limit(1);
+  return {
+    week: mesoWeek(date, { lastDeloadDate: profile.lastDeloadDate, mesoStart: profile.mesoStart, firstWorkoutDate: first?.date ?? null }),
+    deload,
+    deficit: profile.deficitMode,
+    barKg: profile.barKg,
+    injuries: profile.injuries,
+  };
+}
+
+function toPlanItem(p: Prepared): PlanItem {
+  return {
+    exerciseId: p.ex.id,
+    nameEs: p.ex.nameEs,
+    kind: p.ex.kind,
+    equipment: p.ex.equipment,
+    role: p.role,
+    group: groupOf(p.ex.primaryMuscles),
+    repMin: p.values.repMin,
+    repMax: p.values.repMax,
+    topSet: p.topSet,
+    working: p.working,
+    conservative: p.conservative,
+  };
+}
+
+/** Guarda los ejercicios preparados aplicando el plan automático si está activado. */
+async function insertSession(db: AppDb, preps: Prepared[], profile: RestProfile, date: string, deload: boolean, extra: Partial<PlanCtx> = {}) {
+  if (!profile.autoSetPlan) {
+    for (const p of preps) await insertPrepared(db, p, p.plan, null);
+    return;
+  }
+  const ctx = { ...(await planContext(db, profile, date, deload)), ...extra };
+  const planned = planSession(preps.map(toPlanItem), ctx);
+  for (const [i, p] of preps.entries()) await insertPrepared(db, p, planned[i].sets, planned[i].note);
 }
 
 /**
@@ -176,21 +248,27 @@ export async function startWorkoutFromDay(db: AppDb, dayId: number, profile: Res
     .insert(workout)
     .values({ startedAt: now, date, routineDayId: day.id, name: deload ? `${day.name} (descarga)` : day.name, isDeload: deload })
     .returning({ id: workout.id });
+  const preps: Prepared[] = [];
   for (const [i, re] of day.exercises.entries()) {
-    await insertPlannedExercise(db, {
-      workoutId: w.id,
-      ex: re.exercise,
-      sortOrder: i,
-      sets: re.sets,
-      warmupSets: re.warmupSets,
-      repMin: re.repMin,
-      repMax: re.repMax,
-      restS: re.restS,
-      notes: re.notes,
-      profile,
-      deload,
-    });
+    preps.push(
+      await prepareExercise(db, {
+        workoutId: w.id,
+        ex: re.exercise,
+        sortOrder: i,
+        sets: re.sets,
+        warmupSets: re.warmupSets,
+        repMin: re.repMin,
+        repMax: re.repMax,
+        restS: re.restS,
+        notes: re.notes,
+        profile,
+        deload,
+        topSet: re.topSet,
+        supersetGroup: re.supersetGroup,
+      }),
+    );
   }
+  await insertSession(db, preps, profile, date, deload);
   return w.id;
 }
 
@@ -204,24 +282,34 @@ export async function startEmptyWorkout(db: AppDb, now = Date.now(), name = 'Ent
 
 export async function addExerciseToWorkout(db: AppDb, workoutId: number, exerciseId: string, profile: RestProfile) {
   const [ex] = await db.select().from(exercise).where(eq(exercise.id, exerciseId));
-  const [w] = await db.select({ isDeload: workout.isDeload }).from(workout).where(eq(workout.id, workoutId));
-  const existing = await db
-    .select({ id: workoutExercise.id })
-    .from(workoutExercise)
-    .where(eq(workoutExercise.workoutId, workoutId));
-  return insertPlannedExercise(db, {
+  const [w] = await db.select({ isDeload: workout.isDeload, date: workout.date }).from(workout).where(eq(workout.id, workoutId));
+  const existing = await db.query.workoutExercise.findMany({
+    where: eq(workoutExercise.workoutId, workoutId),
+    with: { exercise: true, sets: true },
+  });
+  const scheme = recommendedScheme(resolveRole(ex), profile.deficitMode);
+  const prep = await prepareExercise(db, {
     workoutId,
     ex,
     sortOrder: existing.length,
-    sets: 3,
+    sets: scheme.sets,
     warmupSets: 0,
-    repMin: ex.kind === 'compuesto' ? 6 : 10,
-    repMax: ex.kind === 'compuesto' ? 10 : 15,
+    repMin: scheme.repMin,
+    repMax: scheme.repMax,
     restS: null,
     notes: null,
     profile,
     deload: !!w?.isDeload,
   });
+  // Técnicas ya usadas y músculos ya calentados en esta sesión.
+  const techniquesUsed = existing.filter((e) => e.sets.some((s) => s.setType === 'fallo' || s.setType === 'drop')).length;
+  const warmed = existing.filter((e) => e.sets.some((s) => s.setType === 'calentamiento')).map((e) => groupOf(e.exercise.primaryMuscles));
+  const alreadyWarm = prep.role === 'basico' && warmed.includes(groupOf(ex.primaryMuscles));
+  if (!profile.autoSetPlan) return insertPrepared(db, prep, prep.plan, null);
+  const ctx = { ...(await planContext(db, profile, w?.date ?? toISODate(), !!w?.isDeload)), techniquesUsed };
+  const [planned] = planSession([{ ...toPlanItem(prep), group: alreadyWarm ? null : toPlanItem(prep).group }], ctx);
+  const sets = alreadyWarm ? planned.sets.filter((s) => s.setType !== 'calentamiento') : planned.sets;
+  return insertPrepared(db, prep, sets, planned.note);
 }
 
 /** Sustituye el ejercicio y rellena las series pendientes con la última vez del nuevo. */
@@ -432,4 +520,27 @@ export async function applyWeightDrop(db: AppDb, weId: number, pct = 0.1) {
     .update(workoutExercise)
     .set({ progressionAction: 'mantener', progressionNote: 'Peso reducido un 10 % tras el estancamiento. A partir de aquí, vuelve a progresar.' })
     .where(eq(workoutExercise.id, weId));
+}
+
+/** Superserie con el siguiente ejercicio de la sesión (o la deshace). */
+export async function toggleWorkoutSuperset(db: AppDb, workoutId: number, weId: number) {
+  const rows = await db
+    .select()
+    .from(workoutExercise)
+    .where(eq(workoutExercise.workoutId, workoutId))
+    .orderBy(asc(workoutExercise.sortOrder), asc(workoutExercise.id));
+  const i = rows.findIndex((r) => r.id === weId);
+  const cur = rows[i];
+  const next = rows[i + 1];
+  if (!cur) return false;
+  if (cur.supersetGroup != null && next?.supersetGroup === cur.supersetGroup) {
+    await db.update(workoutExercise).set({ supersetGroup: null }).where(eq(workoutExercise.id, next.id));
+    const left = rows.filter((r) => r.supersetGroup === cur.supersetGroup && r.id !== next.id);
+    if (left.length < 2) for (const r of left) await db.update(workoutExercise).set({ supersetGroup: null }).where(eq(workoutExercise.id, r.id));
+    return false;
+  }
+  if (!next) return false;
+  const group = cur.supersetGroup ?? next.supersetGroup ?? Math.min(cur.id, next.id);
+  await db.update(workoutExercise).set({ supersetGroup: group }).where(inArray(workoutExercise.id, [cur.id, next.id]));
+  return true;
 }

@@ -1,6 +1,6 @@
 import { count, eq } from 'drizzle-orm';
 
-import { exercise, routineExercise, workoutExercise, type ExerciseKind } from '@/db/schema';
+import { exercise, routineExercise, workoutExercise, type ExerciseKind, type ExerciseRole } from '@/db/schema';
 import type { AppDb } from '@/db/types';
 import { classifyRegion } from '@/domain/exerciseClassify';
 
@@ -83,4 +83,9 @@ export async function deleteCustomExercise(db: AppDb, id: string): Promise<boole
 
 export async function setFavorite(db: AppDb, id: string, isFavorite: boolean) {
   await db.update(exercise).set({ isFavorite }).where(eq(exercise.id, id));
+}
+
+/** Rol del ejercicio para el plan automático (null = automático). */
+export async function setExerciseRole(db: AppDb, id: string, role: ExerciseRole | null) {
+  await db.update(exercise).set({ roleOverride: role }).where(eq(exercise.id, id));
 }

@@ -17,5 +17,5 @@ export function useWeekPlan() {
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
-  return { today, loading: data === undefined, ...(data ?? { plan: null, routine: null, profile: null, weekdays: [] }) };
+  return { today, loading: data === undefined, ...(data ?? { plan: null, routine: null, profile: null, weekdays: [], hasOverrides: false }) };
 }

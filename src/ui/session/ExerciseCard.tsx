@@ -7,12 +7,15 @@ import type { SetType } from '@/db/schema';
 import { fmtRest } from '@/domain/session';
 import { fmtNum } from '@/domain/format';
 import { setBeatsRecord, sessionBests } from '@/domain/records';
+import { usesPlates } from '@/domain/plates';
+import { fmtRir, ROLE_LABELS } from '@/domain/setPlan';
 import { formatSets, roundTo, type LastSet } from '@/domain/workout';
 import type { LastPerformance, WorkoutDetail } from '@/repositories/workouts';
 import {
   addSet,
   applyWeightDrop,
   deleteSet,
+  toggleWorkoutSuperset,
   moveWorkoutExercise,
   removeWorkoutExercise,
   setWorkoutExerciseNotes,
@@ -20,7 +23,8 @@ import {
 } from '@/repositories/workouts';
 
 import { ActionSheet, type SheetAction } from '../ActionSheet';
-import { Icon, IconButton, Txt } from '../components';
+import { Icon, IconButton, Row, Txt } from '../components';
+import { PlateSheet } from '../PlateSheet';
 import { colors, fonts, radius, space } from '../theme';
 
 import { COLS, SetRow, type EffortMetric, type SetValues } from './SetRow';
@@ -33,6 +37,7 @@ const SET_TYPE_LABEL: Record<SetType, string> = {
   normal: '',
   fallo: 'F',
   drop: 'D',
+  backoff: 'B',
 };
 
 export function ExerciseCard({
@@ -45,6 +50,7 @@ export function ExerciseCard({
   isLast,
   onToggleSet,
   onSubstitute,
+  bar,
 }: {
   we: WE;
   workoutId: number;
@@ -56,13 +62,19 @@ export function ExerciseCard({
   isLast: boolean;
   onToggleSet: (we: WE, setId: number, wasCompleted: boolean, v: SetValues) => void;
   onSubstitute: (weId: number) => void;
+  /** Barra y discos del perfil (calculadora de discos). */
+  bar?: { barKg: number; plates: number[] | null };
 }) {
   const [menu, setMenu] = useState(false);
   const [setMenuFor, setSetMenuFor] = useState<number | null>(null);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState(we.notes ?? '');
+  const [plates, setPlates] = useState(false);
 
-  const workingCount = we.sets.filter((s) => s.setType !== 'calentamiento').length;
+  const workingCount = we.sets.filter((s) => s.setType !== 'calentamiento' && s.setType !== 'drop').length;
+  const target = we.sets.find((s) => s.setType === 'normal' && s.targetRir != null)?.targetRir ?? null;
+  const nextKg = we.sets.find((s) => !s.completed && s.setType !== 'calentamiento')?.weightKg ?? we.sets.at(-1)?.weightKg ?? null;
+  const inSuperset = we.supersetGroup != null;
   const allDone = we.sets.length > 0 && we.sets.every((s) => s.completed);
   const repHint = we.repMin != null && we.repMax != null ? `${we.repMin}-${we.repMax}` : undefined;
 
@@ -92,6 +104,18 @@ export function ExerciseCard({
     { label: 'Ver ficha y técnica', icon: 'information-outline', onPress: () => router.push({ pathname: '/ejercicio/[id]', params: { id: we.exerciseId } }) },
     { label: we.notes ? 'Editar nota' : 'Añadir nota', icon: 'note-edit-outline', onPress: () => setEditingNotes(true) },
     { label: 'Sustituir ejercicio', icon: 'swap-horizontal', onPress: () => onSubstitute(we.id) },
+    ...(usesPlates(we.exercise.equipment) && bar
+      ? [{ label: 'Calculadora de discos', icon: 'weight-kilogram' as const, onPress: () => setPlates(true) }]
+      : []),
+    ...(!isLast || inSuperset
+      ? [
+          {
+            label: inSuperset ? 'Quitar superserie' : 'Superserie con el siguiente',
+            icon: 'link-variant' as const,
+            onPress: () => toggleWorkoutSuperset(db, workoutId, we.id),
+          },
+        ]
+      : []),
     ...(!isFirst ? [{ label: 'Mover arriba', icon: 'arrow-up' as const, onPress: () => moveWorkoutExercise(db, workoutId, we.id, -1) }] : []),
     ...(!isLast ? [{ label: 'Mover abajo', icon: 'arrow-down' as const, onPress: () => moveWorkoutExercise(db, workoutId, we.id, 1) }] : []),
     {
@@ -110,12 +134,21 @@ export function ExerciseCard({
     { label: 'Calentamiento', icon: 'fire', onPress: () => updateSet(db, setId, { setType: 'calentamiento' }) },
     { label: 'Serie normal', icon: 'numeric', onPress: () => updateSet(db, setId, { setType: 'normal' }) },
     { label: 'Al fallo', icon: 'flash', onPress: () => updateSet(db, setId, { setType: 'fallo' }) },
-    { label: 'Drop set', icon: 'arrow-down-bold', onPress: () => updateSet(db, setId, { setType: 'drop' }) },
+    { label: 'Drop set (sin descanso)', icon: 'arrow-down-bold', onPress: () => updateSet(db, setId, { setType: 'drop' }) },
+    { label: 'Serie de descarga (tras la top)', icon: 'arrow-bottom-right', onPress: () => updateSet(db, setId, { setType: 'backoff' }) },
     { label: 'Eliminar serie', icon: 'delete-outline', destructive: true, onPress: () => deleteSet(db, setId) },
   ];
 
   return (
-    <View style={[styles.card, allDone && { borderColor: colors.accent }]}>
+    <View style={[styles.card, allDone && { borderColor: colors.accent }, inSuperset && styles.superset]}>
+      {inSuperset ? (
+        <Row gap={space.xs} style={{ paddingLeft: space.sm }}>
+          <Icon name="link-variant" size={16} color={colors.accentText} />
+          <Txt variant="label" color={colors.accentText}>
+            Superserie · sin descanso entre ejercicios
+          </Txt>
+        </Row>
+      ) : null}
       <View style={styles.header}>
         <Pressable style={{ flex: 1, gap: 2 }} onPress={() => setMenu(true)}>
           <Txt variant="h3" color={allDone ? colors.accentText : colors.text}>
@@ -124,7 +157,20 @@ export function ExerciseCard({
           <Txt variant="small" color={colors.textDim}>
             {`${workingCount} × ${repHint ?? '—'} reps · descanso ${fmtRest(we.restS ?? 90)}`}
           </Txt>
+          {we.role ? (
+            <Txt variant="caption" color={colors.textFaint}>
+              {`${ROLE_LABELS[we.role]}${target != null ? ` · RIR objetivo ${fmtRir(target)}` : ''}`}
+            </Txt>
+          ) : null}
         </Pressable>
+        {we.planNote ? (
+          <IconButton
+            name="help-circle-outline"
+            label="Por qué este esquema"
+            color={colors.textDim}
+            onPress={() => showAlert(we.exercise.nameEs, we.planNote ?? '')}
+          />
+        ) : null}
         <IconButton name="dots-vertical" label="Opciones del ejercicio" onPress={() => setMenu(true)} />
       </View>
 
@@ -207,6 +253,7 @@ export function ExerciseCard({
       </Pressable>
 
       <ActionSheet visible={menu} title={we.exercise.nameEs} actions={exerciseActions} onClose={() => setMenu(false)} />
+      {bar ? <PlateSheet visible={plates} initialKg={nextKg} barKg={bar.barKg} plates={bar.plates} onClose={() => setPlates(false)} /> : null}
       <ActionSheet
         visible={setMenuFor != null}
         title="Tipo de serie"
@@ -262,6 +309,7 @@ function ProgressionBadge({ we, onDrop, onSubstitute }: { we: WE; onDrop: () => 
 }
 
 const styles = StyleSheet.create({
+  superset: { borderLeftWidth: 4, borderLeftColor: colors.accent },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, alignSelf: 'flex-start' },
   badge: { paddingHorizontal: space.sm, paddingVertical: 3, borderRadius: radius.sm },
   smallBtn: {

@@ -112,6 +112,8 @@ function MigratedApp() {
         <Stack.Screen name="comida/receta" options={{ title: 'Receta' }} />
         <Stack.Screen name="comida/rapidas" options={{ title: 'Calorías rápidas' }} />
         <Stack.Screen name="comida/escanear" options={{ title: 'Escanear código' }} />
+        <Stack.Screen name="comida/sugerencias" options={{ title: '¿Qué como?' }} />
+        <Stack.Screen name="comida/preferencias" options={{ title: 'Preferencias de comida' }} />
         <Stack.Screen name="ajustes/index" options={{ title: 'Ajustes' }} />
         <Stack.Screen name="ajustes/perfil" options={{ title: 'Perfil y objetivo' }} />
         <Stack.Screen name="ajustes/entrenamiento" options={{ title: 'Entrenamiento' }} />

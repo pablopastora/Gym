@@ -68,6 +68,8 @@ export const profile = sqliteTable('profile', {
   fatGPerKg: real('fat_g_per_kg').notNull().default(0.7),
   /** Recalibración del gasto aceptada en los ajustes sugeridos (kcal/día). */
   tdeeAdjustKcal: real('tdee_adjust_kcal').notNull().default(0),
+  /** Preferencias de dieta para el recomendador (vegetariano, sin lactosa…). */
+  dietFlags: text('diet_flags', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
   updatedAt: integer('updated_at'),
 });
 
@@ -443,6 +445,7 @@ export const energyAdjustment = sqliteTable('energy_adjustment', {
 export type MealKey = 'desayuno' | 'comida' | 'merienda' | 'cena' | 'snacks';
 export type FoodSource = 'base' | 'off' | 'propio' | 'receta';
 export type QuantityUnit = 'g' | 'unidad' | 'racion';
+export type FoodPref = 'gusta' | 'no_gusta' | 'alergia';
 
 /**
  * Alimentos: lista local inicial (USDA SR28), productos de Open Food Facts cacheados,
@@ -474,6 +477,10 @@ export const food = sqliteTable(
     /** Recetas: número de raciones de la receta completa. */
     servings: real('servings'),
     isFavorite: integer('is_favorite', { mode: 'boolean' }).notNull().default(false),
+    /** Preferencia: me gusta, no me gusta o alergia/intolerancia (estas dos se excluyen siempre). */
+    pref: text('pref').$type<FoodPref>(),
+    /** Lo tengo en casa (el recomendador lo prioriza). */
+    inPantry: integer('in_pantry', { mode: 'boolean' }).notNull().default(false),
     /** El usuario ha editado un alimento de la lista local: no se sobrescribe al actualizarla. */
     edited: integer('edited', { mode: 'boolean' }).notNull().default(false),
     /** Oculto (alimento borrado que sigue en entradas antiguas del diario). */

@@ -64,6 +64,13 @@
       "when": 1794154120168,
       "tag": "0008_diario_comidas",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1794155008251,
+      "tag": "0009_preferencias_comida",
+      "breakpoints": true
     }
   ]
 }

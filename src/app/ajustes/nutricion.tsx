@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -10,7 +11,7 @@ import { fmtNum, parseDecimal } from '@/domain/format';
 import { useAsyncQuery, useProfile } from '@/hooks/useDb';
 import { adjustmentHistoryQuery, energyStatus } from '@/repositories/energy';
 import { updateProfile } from '@/repositories/profile';
-import { Banner, BigButton, Card, Chip, Field, Row, SectionTitle, Screen, Segmented, Txt } from '@/ui/components';
+import { Banner, BigButton, Card, Chip, Field, ListRow, Row, SectionTitle, Screen, Segmented, Txt } from '@/ui/components';
 import { ESTIMATE_DISCLAIMER, TargetNotices } from '@/ui/EnergyCard';
 import { colors, space } from '@/ui/theme';
 
@@ -128,6 +129,14 @@ function NutricionForm({ p }: { p: Profile }) {
       <Txt variant="caption" color={colors.textFaint}>
         {s?.macros ? `Con tu objetivo: proteína ${s.macros.proteinG} g, grasas ${s.macros.fatG} g y el resto hidratos (${s.macros.carbsG} g).` : 'El resto de kcal va a hidratos.'}
       </Txt>
+
+      <SectionTitle>Preferencias de comida</SectionTitle>
+      <ListRow
+        icon="heart-outline"
+        title="Dieta y alimentos"
+        subtitle={`${p.dietFlags.length ? `${p.dietFlags.length} preferencias de dieta · ` : ''}me gusta, en casa, no me gusta o alergia`}
+        onPress={() => router.push('/comida/preferencias')}
+      />
 
       <SectionTitle>Recalibración del gasto</SectionTitle>
       <Txt variant="small" color={colors.textDim}>

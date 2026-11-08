@@ -18,6 +18,7 @@ import { showAlert } from '@/ui/alert';
 import { Banner, BigButton, Card, Icon, IconButton, ListRow, Row, SectionTitle, Screen, Stat, Txt } from '@/ui/components';
 import { AdjustmentCard, ESTIMATE_DISCLAIMER, TargetNotices } from '@/ui/EnergyCard';
 import { MacroBar } from '@/ui/nutrition/MacroBar';
+import { shareDayPlan } from '@/ui/nutrition/shareDay';
 import { WeeklyIntake } from '@/ui/nutrition/WeeklyIntake';
 import { chart, colors, radius, space } from '@/ui/theme';
 
@@ -141,7 +142,10 @@ export default function Nutricion() {
 
       <AdjustmentCard />
 
-      {/* SUGERENCIAS */}
+      <Row gap={space.sm}>
+        <BigButton title="¿Qué como?" icon="lightbulb-on-outline" style={{ flex: 1, paddingHorizontal: space.sm }} onPress={() => router.push({ pathname: '/comida/sugerencias', params: { date } })} />
+        <BigButton title="Compartir" icon="share-variant-outline" kind="secondary" style={{ flex: 1, paddingHorizontal: space.sm }} onPress={() => shareDayPlan(date)} />
+      </Row>
 
       {MEALS.map((m) => {
         const list = byMeal.get(m.key) ?? [];

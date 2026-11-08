@@ -71,11 +71,13 @@ export default function AnadirComida() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-        {MEALS.map((m) => (
-          <Chip key={m.key} label={m.label} active={meal === m.key} onPress={() => setMeal(m.key)} />
-        ))}
-      </ScrollView>
+      <View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={{ flexGrow: 0 }}>
+          {MEALS.map((m) => (
+            <Chip key={m.key} label={m.label} active={meal === m.key} onPress={() => setMeal(m.key)} />
+          ))}
+        </ScrollView>
+      </View>
       <View style={styles.searchBox}>
         <Icon name="magnify" color={colors.textDim} />
         <TextInput
@@ -110,13 +112,16 @@ export default function AnadirComida() {
         ))}
       </Row>
       {!q.trim() ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          {TABS.map((t) => (
-            <Chip key={t.key} label={t.label} active={tab === t.key} onPress={() => setTab(t.key)} />
-          ))}
-        </ScrollView>
+        <View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={{ flexGrow: 0 }}>
+            {TABS.map((t) => (
+              <Chip key={t.key} label={t.label} active={tab === t.key} onPress={() => setTab(t.key)} />
+            ))}
+          </ScrollView>
+        </View>
       ) : null}
       <FlatList
+        style={{ flex: 1 }}
         data={list}
         keyExtractor={(f) => String(f.id)}
         keyboardShouldPersistTaps="handled"
@@ -183,7 +188,7 @@ export default function AnadirComida() {
 }
 
 const styles = StyleSheet.create({
-  chips: { gap: space.sm, paddingHorizontal: space.lg, paddingVertical: space.sm },
+  chips: { gap: space.sm, paddingHorizontal: space.lg, paddingVertical: space.sm, alignItems: 'center' },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',

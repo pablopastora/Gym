@@ -23,6 +23,24 @@ const SOURCES = [
     use: 'Solo se abre una búsqueda «<ejercicio> técnica»; no se descarga ni se incrusta nada.',
   },
   {
+    name: 'USDA FoodData Central · SR28',
+    url: 'https://fdc.nal.usda.gov',
+    license: 'Dominio público (Gobierno de EE. UU.)',
+    use: 'Valores por 100 g de los 248 alimentos básicos (USDA National Nutrient Database for Standard Reference, Release 28). Los nombres en español, las unidades y las raciones son propios. Hidratos sin fibra, como en las etiquetas europeas.',
+  },
+  {
+    name: 'Open Food Facts',
+    url: 'https://openfoodfacts.org',
+    license: 'Open Database License (ODbL); imágenes CC-BY-SA',
+    use: 'Productos envasados y códigos de barras. Solo se consulta cuando buscas o escaneas, identificando la app, y lo que eliges se guarda en el móvil para usarlo sin conexión.',
+  },
+  {
+    name: 'Fórmulas',
+    url: null,
+    license: '—',
+    use: 'Gasto basal: Mifflin-St Jeor. Caminar y correr: ecuaciones metabólicas del ACSM. Resto de actividades: MET del Compendium of Physical Activities. Todo son estimaciones, no consejo médico ni nutricional.',
+  },
+  {
     name: 'Textos propios',
     url: null,
     license: '—',

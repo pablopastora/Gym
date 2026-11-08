@@ -17,6 +17,8 @@ App Android personal (un solo usuario, sin cuentas) para registrar entrenamiento
 - **Kcal estimadas** de cada entreno y cardio (MET × peso × horas, ±25 %), con el total semanal en Inicio y una gráfica en Progreso.
 - **Sugerencias semanales** de ajuste de la rutina (refuerzo, avance, equilibrio), que solo se aplican si las aceptas, con historial de cambios.
 - **Calculadora de discos**, **mover un día** con un toque, **mapa muscular semanal**, **compartir el entreno como texto** y **superseries**.
+- **Cardio** con kcal por ecuaciones ACSM (caminar/correr con velocidad y pendiente) o MET por tipo e intensidad; cuenta en el día, la semana y Progreso.
+- **Nutrición**: gasto diario (basal Mifflin-St Jeor + actividad + entrenos y cardio netos), objetivo calórico con suelo de seguridad, macros, ajuste adaptativo con aceptar/rechazar, diario de comidas (búsqueda, escáner, recientes, favoritos, alimentos y recetas propios, kcal rápidas), 248 alimentos básicos y Open Food Facts, y recomendador «¿Qué como?» con tus preferencias. Son estimaciones, no consejo médico.
 - **Plan de series automático** según el rol del ejercicio (básico, accesorio, aislamiento): calentamientos, serie top + descarga, fallo/dropset limitados, RIR objetivo por semana de un mesociclo de 4 semanas y un «?» que explica cada serie. Se puede desactivar en Ajustes.
 
 ## Estado por fases
@@ -30,6 +32,10 @@ App Android personal (un solo usuario, sin cuentas) para registrar entrenamiento
 | 5 | Peso con media móvil, medidas, fotos y comparador, resumen semanal y racha | ✅ |
 | 6 | Biblioteca multimedia: 154 fichas en español, vídeos de wger con caché, filtros, ejercicios propios | ✅ |
 | 7 | Calendario, recordatorios, copia de seguridad (ZIP/JSON/CSV), icono, pulido y APK | ✅ |
+| A | Cardio: arreglo del recuento, ecuaciones ACSM/MET, formulario nuevo | ✅ |
+| B | Gasto energético diario, objetivo calórico, macros y ajuste adaptativo | ✅ |
+| C | Diario de comidas, alimentos básicos, Open Food Facts, escáner, recetas | ✅ |
+| D | Recomendador de comidas y preferencias | ✅ |
 
 ## Requisitos
 
@@ -72,7 +78,7 @@ Todo se guarda solo en el móvil. Desde *Ajustes → Copia de seguridad*:
 
 - **Copia completa (ZIP)**: datos y fotos. Es la recomendada; guárdala en Drive o en el correo.
 - **Solo datos (JSON)**: más ligera, sin fotos.
-- **CSV**: un ZIP con `series.csv`, `entrenos.csv`, `peso.csv`, `medidas.csv` y `cardio.csv`, con «;» como separador y coma decimal para Excel o Sheets en español. Sirve para analizar los datos, no para restaurar.
+- **CSV**: un ZIP con `series.csv`, `entrenos.csv`, `peso.csv`, `medidas.csv`, `cardio.csv`, `comidas.csv`, `alimentos.csv`, `recetas.csv`, `objetivos.csv` y `ajustes_gasto.csv`, con «;» como separador y coma decimal para Excel o Sheets en español. Sirve para analizar los datos, no para restaurar.
 - **Restaurar**: sustituye todos los datos por los de la copia. Antes guarda una copia automática (se conservan las 3 últimas) para poder deshacer desde la misma pantalla.
 
 ## Generar el APK (EAS Build, en la nube)
@@ -95,14 +101,15 @@ src/app/            pantallas (expo-router): (tabs)/ inicio, entrenar, rutinas, 
                     + calendario, ajustes/*, rutina/[id], ejercicio/[id]
 src/db/             schema.ts (Drizzle), migrations.ts (generado), seed.ts, client.ts
 src/domain/         lógica pura y testeada (IMC, media móvil, objetivo, 1RM, rotación de días…)
-src/data/           free-exercise-db.json, fichas curadas en español, rutina por defecto, etiquetas
+src/data/           free-exercise-db.json, fichas curadas en español, rutina por defecto, etiquetas,
+                    foods.ts (alimentos básicos, generado)
 src/repositories/   acceso a datos
 src/hooks/          hooks de datos reactivos
 src/ui/             theme.ts (único archivo de tema), componentes, sesión activa (session/)
-src/services/       notificaciones (fin de descanso)
+src/services/       notificaciones (fin de descanso), Open Food Facts, copias
 src/stores/         estado global: temporizador de descanso, selector de ejercicios
 drizzle/            SQL de migraciones generado por drizzle-kit
-scripts/            build-migrations.mjs, import-free-exercise-db.mjs
+scripts/            build-migrations.mjs, import-free-exercise-db.mjs, build-foods.mjs (+ foods/base-foods.txt)
 ```
 
 ### Cambiar el modelo de datos
@@ -110,6 +117,10 @@ scripts/            build-migrations.mjs, import-free-exercise-db.mjs
 1. Edita `src/db/schema.ts`.
 2. Ejecuta `npm run db:generate`: crea el SQL en `drizzle/` y regenera `src/db/migrations.ts`.
 3. Al arrancar, la app aplica las migraciones pendientes sin perder datos.
+
+### Actualizar la lista de alimentos básicos
+
+`scripts/foods/base-foods.txt` tiene cada alimento con su nombre en español, su número USDA (NDB), categoría, etiquetas, unidad y ración. `node scripts/build-foods.mjs <ABBREV.txt>` regenera `src/data/foods.ts` con los valores de USDA SR28 (`ABBREV.txt` viene, por ejemplo, en el paquete npm `fda-nutrient-database`). Si cambias la lista, sube `BASE_FOODS_VERSION`: al abrir la app se añaden los nuevos y se actualizan los no editados.
 
 ### Actualizar la biblioteca de ejercicios
 
@@ -119,6 +130,8 @@ scripts/            build-migrations.mjs, import-free-exercise-db.mjs
 
 - **free-exercise-db** ([yuhonas/free-exercise-db](https://github.com/yuhonas/free-exercise-db)), Unlicense (dominio público): datos base e imágenes de los ejercicios. Las imágenes se descargan al verlas y se guardan en caché en disco.
 - **Textos en español** (nombres, instrucciones, notas de técnica y errores comunes): propios.
+- **Alimentos básicos**: valores de USDA National Nutrient Database for Standard Reference, Release 28 (dominio público); nombres, unidades y raciones propios. No se ha usado BEDCA: no era accesible desde el entorno de desarrollo y sus condiciones no permiten claramente redistribuir los datos.
+- **Open Food Facts** (ODbL): productos y códigos de barras, consultados desde el móvil solo al buscar o escanear, con un User-Agent propio; lo elegido se guarda en local.
 - **YouTube:** solo enlaces de búsqueda; no se descarga ni se incrusta nada.
 - **wger** (CC-BY-SA): vídeos de técnica. La app los busca en wger.de desde el móvil la primera vez que abres un ejercicio, muestra su autor y su licencia, y los guarda en caché (expo-video).
 

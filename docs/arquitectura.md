@@ -115,6 +115,67 @@
 - **Modo manual**: *Ajustes → Entrenamiento → Plan automático de series* (activo por defecto). Desactivado, la sesión se crea como antes. Las series ya hechas nunca se modifican.
 - **Migración 0005** (aditiva): `profile.available_plates/auto_set_plan/meso_start`, `exercise.role_override`, `routine_exercise.top_set`, `workout_exercise.role/plan_note`, `workout_set.target_rir` y la tabla `day_override` (incluida en la copia de seguridad).
 
+## Ronda 4: cardio, gasto energético y nutrición
+
+### Fase A · Cardio
+- **Bug**: un ejercicio de cardio de la biblioteca (p. ej. «Caminar en cinta») añadido a un entreno se guardaba como series de fuerza. No contaba como cardio, y en las kcal de fuerza apenas sumaba, porque la duración efectiva se limita por series. Ahora:
+  - elegirlo en la sesión abre el registro de cardio vinculado al entreno;
+  - los que ya se guardaron así aparecen en *Entrenar* para convertirlos;
+  - `computeWorkoutKcal` excluye los ejercicios de categoría cardio.
+  - Además, el resumen semanal se quedaba con la fecha de apertura (ahora usa `useToday`) e Inicio no mostraba el cardio del día (*Actividad de hoy*).
+- **Fórmulas** (`src/domain/cardio.ts`):
+  - ACSM para caminar (≤ 6,5 km/h) y correr (≥ 8 km/h), con interpolación lineal entre ambas;
+  - kcal = VO2 × kg × min / 1000 × 5;
+  - el resto de tipos usa MET por tipo e intensidad;
+  - la velocidad se calcula desde distancia o ritmo.
+- **Migración 0006**: `cardio_session.speed_kmh/incline_pct/intensity/met/kcal_method`. Los registros antiguos (`kcal_method` null) se recalculan una vez (marca `kcal_backfill_v2`), aprovechando «5 km/h» o «12 %» si están en las notas.
+
+### Fase B · Gasto y objetivo (`src/domain/energy.ts`, `src/repositories/energy.ts`)
+- **Basal**: Mifflin-St Jeor con el peso más reciente. Si faltan la edad o el sexo, no se calcula y se piden.
+- **Gasto del día**: basal × factor (sedentario 1,2 / ligero 1,3 / activo 1,45) + ejercicio **neto**. Las kcal brutas de cada actividad se reducen en lo que el factor ya asigna a esos minutos (minutos ≈ kcal × 60 / (MET × kg)), para no contarlas dos veces.
+- **Objetivo**: gasto de un día medio (con el ejercicio neto medio de los 14 días anteriores) − déficit.
+  - El déficit sale del ritmo: 0,5-0,75 kg/sem según el objetivo, o el elegido; 7700 kcal/kg.
+  - El déficit nunca pasa del 25 % del gasto.
+  - Suelo: max(basal, 1.500). Si un objetivo manual queda por debajo, se avisa y se propone uno más suave.
+- **Macros**: proteína 2 g/kg y grasas 0,7 g/kg (editables); el resto, hidratos.
+- **Ajuste adaptativo**:
+  - Compara la media de 7 días del peso al principio y al final de las 3 últimas semanas con el balance «ingesta − gasto estimado».
+  - Necesita ≥ 14 días con ingesta y ≥ 3 pesajes en cada extremo.
+  - Si la diferencia es ≥ 100 kcal, propone un ajuste de como mucho ±300 kcal (tabla `energy_adjustment`).
+  - Nunca se aplica solo, y no vuelve a proponer durante 14 días después de decidir.
+- **Migración 0007**.
+
+### Fase C · Diario (`src/domain/nutrition.ts`, `src/repositories/foods.ts`, `src/repositories/diary.ts`)
+- **Tablas**:
+  - `food` guarda la lista básica, los productos cacheados de Open Food Facts, los alimentos propios y las recetas (`source`). Los valores van por 100 g. `edited` protege lo editado frente a las actualizaciones de la lista y `archived` oculta los borrados.
+  - `recipe_item` guarda los ingredientes de las recetas.
+  - `diary_entry` guarda una instantánea de los valores, así que editar o borrar un alimento no cambia el historial.
+- **Lista básica**: 248 alimentos generados desde USDA SR28 (`scripts/build-foods.mjs`). Se cargan de forma idempotente en `runSeed` (`BASE_FOODS_VERSION`).
+- **Open Food Facts** (`src/services/openFoodFacts.ts`): búsqueda en es.openfoodfacts.org y producto por código (API v2), con User-Agent propio y tiempo límite de 10 s. Sin conexión, la app funciona con los alimentos locales y los cacheados.
+- **Escáner**: `expo-camera` (`CameraView` con EAN-13/EAN-8/UPC). Primero busca en local y después en Open Food Facts. Si no encuentra el producto, se crea a mano con ese código.
+- **Copias**: las tablas nuevas van en la copia JSON/ZIP, y hay CSV de comidas, alimentos, recetas, objetivos y ajustes. Hay tests de ida y vuelta.
+- **Migración 0008**.
+
+### Fase D · Recomendador (`src/domain/mealPlanner.ts`)
+- **Exclusiones**: se aplican siempre (`no_gusta`, `alergia` y las preferencias de dieta por etiquetas o categoría).
+- **Papel de cada alimento**: proteína (≥ 35 % de las kcal de proteína), hidrato, verdura, fruta o grasa.
+- **Plantillas**: por comida.
+- **Ingredientes**: si hay alimentos marcados de un tipo (en casa, me gusta o favorito), se combinan esos; si no, una lista de alimentos habituales.
+- **Raciones**:
+  - la fuente principal cubre la proteína (el resto aporta como mucho un 25 %);
+  - la grasa entra si cabe;
+  - el hidrato completa las kcal;
+  - la verdura y la fruta van fijas por volumen;
+  - todo se limita a gramos razonables.
+- **Puntuación**: error de proteína y kcal, exceso de kcal, saciedad (proteína, fibra y gramos por kcal) y preferencias. Se eligen 3 opciones con proteína distinta, penalizando que se repita el resto.
+- **Objetivo por comida**: el reparto 25/35/10/30 entre las comidas aún sin registros.
+- **Compartir**: `dayPlanText`.
+- **Migración 0009**: `food.pref/in_pantry` y `profile.diet_flags`.
+
+### Nativo
+- Módulo nativo nuevo: `expo-camera` (escáner). Funciona en Expo Go; el APK hay que recompilarlo.
+- Permiso Android: `CAMERA`, que se pide solo al abrir el escáner. `RECORD_AUDIO` sigue bloqueado.
+
 ---
 
 # Propuesta original (fase 0)

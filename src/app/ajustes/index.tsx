@@ -22,6 +22,12 @@ export default function Ajustes() {
           subtitle="Días por semana, incrementos, descansos y modo déficit"
           onPress={() => router.push('/ajustes/entrenamiento')}
         />
+        <ListRow
+          icon="food-apple-outline"
+          title="Nutrición y gasto"
+          subtitle="Actividad diaria, ritmo, objetivo calórico y macros"
+          onPress={() => router.push('/ajustes/nutricion')}
+        />
       </View>
       <SectionTitle>Datos</SectionTitle>
       <View style={{ borderRadius: 16, overflow: 'hidden', gap: 1 }}>

@@ -58,6 +58,16 @@ export const profile = sqliteTable('profile', {
   autoSetPlan: integer('auto_set_plan', { mode: 'boolean' }).notNull().default(true),
   /** Lunes en que empezó el mesociclo actual (si no hay descarga previa). */
   mesoStart: text('meso_start'),
+  /** Actividad diaria fuera del ejercicio (factor sobre el basal). */
+  activityLevel: text('activity_level', { enum: ['sedentario', 'ligero', 'activo'] }).notNull().default('ligero'),
+  /** Ritmo de pérdida (kg/semana). null = según el objetivo de peso y fecha. */
+  targetRateKgWeek: real('target_rate_kg_week'),
+  /** Objetivo calórico manual (kcal/día). null = calculado. */
+  kcalTargetManual: integer('kcal_target_manual'),
+  proteinGPerKg: real('protein_g_per_kg').notNull().default(2),
+  fatGPerKg: real('fat_g_per_kg').notNull().default(0.7),
+  /** Recalibración del gasto aceptada en los ajustes sugeridos (kcal/día). */
+  tdeeAdjustKcal: real('tdee_adjust_kcal').notNull().default(0),
   updatedAt: integer('updated_at'),
 });
 
@@ -412,3 +422,20 @@ export type BodyMeasurement = typeof bodyMeasurement.$inferSelect;
 export type ProgressPhoto = typeof progressPhoto.$inferSelect;
 export type CardioSession = typeof cardioSession.$inferSelect;
 export type PersonalRecord = typeof personalRecord.$inferSelect;
+
+/** Ajustes sugeridos del gasto estimado (comparando ingesta y cambio de peso). */
+export const energyAdjustment = sqliteTable('energy_adjustment', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  createdDate: text('created_date').notNull(),
+  fromDate: text('from_date').notNull(),
+  toDate: text('to_date').notNull(),
+  loggedDays: integer('logged_days').notNull(),
+  avgIntake: real('avg_intake').notNull(),
+  avgEstimated: real('avg_estimated').notNull(),
+  weightChangeKg: real('weight_change_kg').notNull(),
+  observedTdee: real('observed_tdee').notNull(),
+  deltaKcal: real('delta_kcal').notNull(),
+  status: text('status', { enum: ['pendiente', 'aceptado', 'rechazado'] }).notNull().default('pendiente'),
+  decidedAt: integer('decided_at'),
+  createdAt: createdAt(),
+});

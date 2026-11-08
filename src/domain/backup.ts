@@ -31,6 +31,7 @@ export const BACKUP_TABLES = [
   'reminder',
   'routineSuggestion',
   'dayOverride',
+  'energyAdjustment',
 ] as const;
 
 export type BackupTable = (typeof BACKUP_TABLES)[number];

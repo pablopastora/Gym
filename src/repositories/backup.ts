@@ -28,6 +28,7 @@ const TABLES: Record<BackupTable, any> = {
   reminder: schema.reminder,
   routineSuggestion: schema.routineSuggestion,
   dayOverride: schema.dayOverride,
+  energyAdjustment: schema.energyAdjustment,
 };
 
 export async function exportAll(db: AppDb): Promise<BackupFile> {

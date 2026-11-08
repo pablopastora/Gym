@@ -23,6 +23,7 @@ import { WeeklySuggestions } from '@/ui/WeeklySuggestions';
 import { DeloadCard } from '@/ui/DeloadCard';
 import { QuickWeight } from '@/ui/QuickWeight';
 import { TodayActivity } from '@/ui/TodayActivity';
+import { AdjustmentCard, EnergyCard } from '@/ui/EnergyCard';
 import { WeeklySummary } from '@/ui/WeeklySummary';
 import { colors, space } from '@/ui/theme';
 import { showAlert } from '@/ui/alert';
@@ -132,6 +133,8 @@ export default function Inicio() {
       )}
 
       <TodayActivity today={todayIso} />
+      <EnergyCard today={todayIso} />
+      <AdjustmentCard />
 
       {next?.session && !active ? (
         <Card>

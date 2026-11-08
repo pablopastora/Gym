@@ -109,6 +109,7 @@ function MigratedApp() {
         <Stack.Screen name="ajustes/index" options={{ title: 'Ajustes' }} />
         <Stack.Screen name="ajustes/perfil" options={{ title: 'Perfil y objetivo' }} />
         <Stack.Screen name="ajustes/entrenamiento" options={{ title: 'Entrenamiento' }} />
+        <Stack.Screen name="ajustes/nutricion" options={{ title: 'Nutrición y gasto' }} />
         <Stack.Screen name="ajustes/creditos" options={{ title: 'Créditos y licencias' }} />
         <Stack.Screen name="rutina/[id]" options={{ title: 'Rutina' }} />
         <Stack.Screen name="rutina/ejercicio/[id]" options={{ title: 'Ejercicio de la rutina' }} />

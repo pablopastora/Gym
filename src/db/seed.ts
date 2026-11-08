@@ -109,9 +109,10 @@ export async function runSeed(db: AppDb) {
     await setMeta(db, 'default_routine_seeded', '1');
   }
 
-  // Kcal de entrenos y cardio anteriores a esta versión (una sola vez).
-  if (!(await getMeta(db, 'kcal_backfill_v1'))) {
+  // Kcal de entrenos y cardio anteriores (una vez por versión del cálculo):
+  // v2 = cardio con ecuaciones ACSM/MET por intensidad y fuerza sin ejercicios de cardio.
+  if (!(await getMeta(db, 'kcal_backfill_v2'))) {
     await backfillKcal(db);
-    await setMeta(db, 'kcal_backfill_v1', '1');
+    await setMeta(db, 'kcal_backfill_v2', '1');
   }
 }

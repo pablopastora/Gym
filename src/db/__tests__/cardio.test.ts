@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 
-import { bodyWeight, cardioSession, profile, workout, workoutExercise } from '@/db/schema';
+import { appMeta, bodyWeight, cardioSession, profile, workout, workoutExercise } from '@/db/schema';
 import { runSeed } from '@/db/seed';
 import { addCardio, cardioLoggedAsStrength, convertExerciseToCardio, updateCardio } from '@/repositories/cardio';
 import { activityByDay, backfillKcal, paceFromNotes, weeklyKcal } from '@/repositories/kcal';
@@ -72,5 +72,17 @@ describe('ejercicios de cardio de la biblioteca dentro de un entreno', () => {
     expect(await db.select().from(workoutExercise).where(eq(workoutExercise.workoutId, wid))).toHaveLength(0);
     const [c] = await db.select().from(cardioSession);
     expect(c).toMatchObject({ workoutId: wid, kcal: 298, durationMin: 30 });
+  });
+});
+
+describe('al arrancar tras actualizar', () => {
+  it('runSeed recalcula una vez los cardios antiguos aunque ya se hubiera hecho el cálculo v1', async () => {
+    const { db } = await setup();
+    // Móvil con la versión anterior: solo tenía la marca v1.
+    await db.delete(appMeta).where(eq(appMeta.key, 'kcal_backfill_v2'));
+    await db.insert(appMeta).values({ key: 'kcal_backfill_v1', value: '1' }).onConflictDoNothing();
+    await db.insert(cardioSession).values({ date: '2026-11-05', type: 'Cinta', durationMin: 30, notes: '5,5 km/h 5 %', kcal: 333 });
+    await runSeed(db);
+    expect((await db.select().from(cardioSession))[0]).toMatchObject({ kcal: 298, kcalMethod: 'acsm' });
   });
 });

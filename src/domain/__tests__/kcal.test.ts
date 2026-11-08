@@ -1,4 +1,4 @@
-import { cardioMet, effectiveMinutes, estimateCardioKcal, estimateStrengthKcal, type KcalSet } from '../kcal';
+import { effectiveMinutes, estimateStrengthKcal, type KcalSet } from '../kcal';
 
 const sets = (n: number, extra: Partial<KcalSet> = {}): KcalSet[] =>
   Array.from({ length: n }, () => ({ setType: 'normal', completed: true, weightKg: 60, reps: 10, ...extra }));
@@ -37,20 +37,5 @@ describe('kcal de fuerza', () => {
     expect(effectiveMinutes(60, 20)).toBe(60);
     expect(effectiveMinutes(10, 0)).toBe(0);
     expect(estimateStrengthKcal({ sets: [], totalMin: 30, bodyKg: 90 }).kcal).toBe(0);
-  });
-});
-
-describe('kcal de cardio', () => {
-  it('MET por tipo y ritmo', () => {
-    expect(cardioMet('Cinta inclinada', 30)).toBe(6);
-    expect(cardioMet('Caminar', 60, 5)).toBe(3.5);
-    expect(cardioMet('Correr', 30, 5)).toBe(9.8); // 10 km/h
-    expect(cardioMet('Correr', 30)).toBe(8.3);
-    expect(cardioMet('Bici estática', 30)).toBe(6.8);
-    expect(cardioMet('Elíptica', 30)).toBe(5);
-    expect(cardioMet('Otro', 30)).toBe(5);
-  });
-  it('30 min de cinta inclinada a 95 kg = 285 kcal', () => {
-    expect(estimateCardioKcal({ type: 'Cinta inclinada', durationMin: 30, bodyKg: 95 })).toEqual({ met: 6, kcal: 285 });
   });
 });

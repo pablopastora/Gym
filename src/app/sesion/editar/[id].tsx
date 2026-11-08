@@ -7,7 +7,6 @@ import { formatDateLong } from '@/domain/dates';
 import { useAsyncQuery, useProfile } from '@/hooks/useDb';
 import { getPreviousBests } from '@/repositories/progress';
 import {
-  addExerciseToWorkout,
   completeSet,
   getLastPerformance,
   saveWorkoutEdits,
@@ -21,6 +20,7 @@ import { showAlert } from '@/ui/alert';
 import { Banner, BigButton, Txt } from '@/ui/components';
 import { ExerciseCard } from '@/ui/session/ExerciseCard';
 import type { SetValues } from '@/ui/session/SetRow';
+import { addExerciseOrCardio } from '@/ui/sessionStart';
 import { colors, space } from '@/ui/theme';
 
 /**
@@ -112,7 +112,7 @@ export default function EditarEntreno() {
               bar={{ barKg: profile.barKg, plates: profile.availablePlates }}
             />
           ))}
-          <BigButton title="Añadir ejercicio" icon="plus" kind="secondary" onPress={() => pickExercise((exerciseId) => addExerciseToWorkout(db, w.id, exerciseId, profile))} />
+          <BigButton title="Añadir ejercicio" icon="plus" kind="secondary" onPress={() => pickExercise((exerciseId) => addExerciseOrCardio(w, exerciseId, profile))} />
           <BigButton title="Guardar cambios" icon="content-save" onPress={save} />
         </ScrollView>
       </KeyboardAvoidingView>

@@ -325,8 +325,17 @@ export const cardioSession = sqliteTable(
     steps: integer('steps'),
     distanceKm: real('distance_km'),
     notes: text('notes'),
-    /** Kcal estimadas según tipo, duración y ritmo. */
+    /** Kcal estimadas (brutas) según tipo, duración, velocidad, pendiente e intensidad. */
     kcal: real('kcal'),
+    /** Velocidad media (km/h): la indicada o la calculada con distancia/ritmo. */
+    speedKmh: real('speed_kmh'),
+    /** Pendiente (%), en cinta o al caminar/correr. */
+    inclinePct: real('incline_pct'),
+    intensity: text('intensity', { enum: ['suave', 'moderada', 'intensa'] }),
+    /** MET equivalente usado. */
+    met: real('met'),
+    /** Método del cálculo: ecuaciones ACSM o MET. null = calculado con la versión antigua. */
+    kcalMethod: text('kcal_method', { enum: ['acsm', 'met'] }),
     workoutId: integer('workout_id').references(() => workout.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
   },

@@ -100,40 +100,9 @@ export function estimateStrengthKcal(input: { sets: KcalSet[]; totalMin: number;
   return { kcal, met, level, effectiveMin: Math.round(effectiveMin), workingSets: working.length, factors };
 }
 
-/** MET del cardio según tipo y ritmo (km/h si hay distancia). */
-export function cardioMet(type: string, durationMin: number, distanceKm?: number | null): number {
-  const kmh = distanceKm && durationMin > 0 ? distanceKm / (durationMin / 60) : null;
-  const t = type.toLowerCase();
-  if (t.includes('inclinada')) return kmh && kmh > 6.5 ? 8.0 : 6.0;
-  if (t.includes('caminar') || (t === 'cinta' && kmh != null && kmh < 6.5)) {
-    if (kmh == null) return 3.5;
-    if (kmh < 4) return 2.8;
-    if (kmh < 5.5) return 3.5;
-    return 4.3;
-  }
-  if (t.includes('correr') || t === 'cinta') {
-    if (kmh == null) return t === 'cinta' ? 7.0 : 8.3;
-    if (kmh < 8) return 7.0;
-    if (kmh < 9.5) return 8.3;
-    if (kmh < 11) return 9.8;
-    if (kmh < 12.5) return 11.0;
-    return 11.8;
-  }
-  if (t.includes('bici')) return kmh != null && kmh > 25 ? 8.8 : 6.8;
-  if (t.includes('elíptica') || t.includes('eliptica')) return 5.0;
-  if (t.includes('remo')) return 7.0;
-  if (t.includes('escaleras')) return 9.0;
-  return 5.0;
-}
-
-export function estimateCardioKcal(input: { type: string; durationMin: number; distanceKm?: number | null; bodyKg: number }) {
-  const met = cardioMet(input.type, input.durationMin, input.distanceKm);
-  return { met, kcal: Math.round(met * input.bodyKg * (input.durationMin / 60)) };
-}
-
 export const KCAL_EXPLANATION =
   'Estimación aproximada (±20-30 %): kcal = MET × tu peso más reciente × horas.\n\n' +
   'Fuerza: MET 3,5 (ligera), 5 (moderada) o 6 (intensa) según el esfuerzo (RIR/RPE), los descansos (series por hora) y el volumen. ' +
   'Solo cuenta el tiempo efectivo (si olvidas terminar la sesión no suma de más).\n\n' +
-  'Cardio: MET según el tipo y el ritmo (km/h si indicas la distancia).\n\n' +
+  'Cardio: ecuaciones del ACSM para caminar y correr (velocidad y pendiente) y MET por tipo e intensidad para el resto. Toca la «i» del cardio para ver el detalle.\n\n' +
   'Valores del Compendium of Physical Activities. Úsalo como orientación, no como dato exacto.';

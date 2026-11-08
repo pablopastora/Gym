@@ -10,11 +10,11 @@ import { summarizeSets } from '@/domain/workout';
 import { useAsyncQuery } from '@/hooks/useDb';
 import { useNow } from '@/hooks/useNow';
 import { useWeekPlan } from '@/hooks/useWeekPlan';
-import { deleteCardio, recentCardioQuery } from '@/repositories/cardio';
+import { cardioLoggedAsStrength, deleteCardio, recentCardioQuery } from '@/repositories/cardio';
 import { clearWeekOverrides } from '@/repositories/plan';
 import { getActiveWorkout, recentWorkoutsQuery } from '@/repositories/workouts';
 import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
-import { BigButton, Card, EmptyState, ListRow, Row, SectionTitle, Screen, Txt } from '@/ui/components';
+import { Banner, BigButton, Card, EmptyState, ListRow, Row, SectionTitle, Screen, Txt } from '@/ui/components';
 import { colors, radius, space } from '@/ui/theme';
 import { showAlert } from '@/ui/alert';
 import { MoveDaySheet } from '@/ui/MoveDaySheet';
@@ -27,7 +27,9 @@ export default function Entrenar() {
   const { data: active } = useAsyncQuery('active-workout-summary', () => getActiveWorkout(db));
   const { data: history } = useAsyncQuery('recent-workouts', () => recentWorkoutsQuery(db, 15));
   const { data: cardio } = useLiveQuery(recentCardioQuery(db, 10));
+  const { data: misLogged } = useAsyncQuery('cardio-as-strength', () => cardioLoggedAsStrength(db));
   const [another, setAnother] = useState(false);
+  const [cardioMenu, setCardioMenu] = useState<number | null>(null);
   const now = useNow(30_000);
 
   const start = (dayId: number | 'libre') => profile && startSession(profile, dayId);
@@ -104,6 +106,31 @@ export default function Entrenar() {
         <Txt color={colors.textDim}>Aún no has terminado ningún entreno.</Txt>
       )}
 
+      {misLogged?.length ? (
+        <>
+          <SectionTitle>Cardio registrado como fuerza</SectionTitle>
+          <Banner kind="info">
+            Estos ejercicios de cardio se apuntaron como series, así que no contaban en las kcal ni en los minutos de cardio. Regístralos como cardio para que cuenten.
+          </Banner>
+          <View style={{ borderRadius: radius.lg, overflow: 'hidden', gap: 1 }}>
+            {misLogged.map((m) => (
+              <ListRow
+                key={m.workoutExerciseId}
+                icon="run"
+                title={m.name}
+                subtitle={`${formatDateLong(m.date)} · ${m.guessMin ? `¿${m.guessMin} min?` : 'indica los minutos'} · Registrar como cardio`}
+                onPress={() =>
+                  router.push({
+                    pathname: '/cardio/nuevo',
+                    params: { fromWe: m.workoutExerciseId, type: m.type, date: m.date, ...(m.guessMin ? { min: String(m.guessMin) } : {}) },
+                  })
+                }
+              />
+            ))}
+          </View>
+        </>
+      ) : null}
+
       {cardio?.length ? (
         <>
           <SectionTitle>Cardio</SectionTitle>
@@ -116,17 +143,14 @@ export default function Entrenar() {
                 subtitle={[
                   formatDateLong(c.date),
                   c.distanceKm != null ? `${fmtNum(c.distanceKm, 2)} km` : null,
+                  c.speedKmh != null ? `${fmtNum(c.speedKmh, 1)} km/h` : null,
+                  c.inclinePct ? `${fmtNum(c.inclinePct, 1)} %` : null,
                   c.steps != null ? `${c.steps.toLocaleString('es-ES')} pasos` : null,
                   c.kcal != null ? `~${fmtNum(c.kcal, 0)} kcal` : null,
                 ]
                   .filter(Boolean)
                   .join(' · ')}
-                onPress={() =>
-                  showAlert('Borrar cardio', '¿Borrar este registro de cardio?', [
-                    { text: 'Cancelar', style: 'cancel' },
-                    { text: 'Borrar', style: 'destructive', onPress: () => deleteCardio(db, c.id) },
-                  ])
-                }
+                onPress={() => setCardioMenu(c.id)}
               />
             ))}
           </View>
@@ -134,6 +158,27 @@ export default function Entrenar() {
       ) : null}
       <View style={{ height: space.lg }} />
       <ActionSheet visible={another} title="Otra sesión hoy" actions={anotherActions} onClose={() => setAnother(false)} />
+      <ActionSheet
+        visible={cardioMenu != null}
+        title="Cardio"
+        actions={[
+          { label: 'Editar', icon: 'pencil-outline', onPress: () => cardioMenu != null && router.push({ pathname: '/cardio/nuevo', params: { id: cardioMenu } }) },
+          {
+            label: 'Borrar',
+            icon: 'delete-outline',
+            destructive: true,
+            onPress: () => {
+              const id = cardioMenu;
+              if (id == null) return;
+              showAlert('Borrar cardio', '¿Borrar este registro de cardio?', [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Borrar', style: 'destructive', onPress: () => deleteCardio(db, id) },
+              ]);
+            },
+          },
+        ]}
+        onClose={() => setCardioMenu(null)}
+      />
       <MoveDaySheet plan={plan} from={moveFrom} hasOverrides={!!hasOverrides} onClose={() => setMoveFrom(null)} />
     </Screen>
   );

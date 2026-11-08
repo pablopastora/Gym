@@ -4,10 +4,11 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { db } from '@/db/client';
 import { cardioSession, workout, type Profile } from '@/db/schema';
 import { currentTrend, measurementAt, weeklySummary } from '@/domain/body';
-import { addDays, startOfWeek, toISODate } from '@/domain/dates';
+import { addDays, startOfWeek } from '@/domain/dates';
 import { fmtNum } from '@/domain/format';
 import { evaluateGoal, onTrack } from '@/domain/goals';
 import { weekStreak } from '@/domain/schedule';
+import { useToday } from '@/hooks/useToday';
 import { measurementsQuery, weightsQuery } from '@/repositories/body';
 
 import { Banner, Card, Row, Stat } from './components';
@@ -15,18 +16,22 @@ import { colors } from './theme';
 
 /** Resumen de la semana: entrenos, racha, cardio, peso medio, variación, cintura y ritmo. */
 export function WeeklySummary({ profile }: { profile: Profile }) {
-  const today = toISODate();
+  // Fecha reactiva: si la app sigue abierta al cambiar de día o de semana, se recalcula.
+  const today = useToday();
   const ws = startOfWeek(today);
   const { data: weights } = useLiveQuery(weightsQuery(db));
   const { data: measures } = useLiveQuery(measurementsQuery(db));
   const { data: workouts } = useLiveQuery(
     db.select({ date: workout.date }).from(workout).where(and(isNotNull(workout.endedAt), gte(workout.date, addDays(ws, -7 * 52)))),
+    [ws],
   );
   const { data: cardio } = useLiveQuery(
     db.select({ min: cardioSession.durationMin, kcal: cardioSession.kcal }).from(cardioSession).where(gte(cardioSession.date, ws)),
+    [ws],
   );
   const { data: weekKcal } = useLiveQuery(
     db.select({ kcal: workout.kcal }).from(workout).where(and(isNotNull(workout.endedAt), gte(workout.date, ws))),
+    [ws],
   );
   if (!weights || !measures || !workouts || !cardio || !weekKcal) return null;
   const kcalWeek = weekKcal.reduce((a, w) => a + (w.kcal ?? 0), 0) + cardio.reduce((a, c) => a + (c.kcal ?? 0), 0);

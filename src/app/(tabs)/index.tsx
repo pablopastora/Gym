@@ -22,6 +22,7 @@ import { startSession } from '@/ui/sessionStart';
 import { WeeklySuggestions } from '@/ui/WeeklySuggestions';
 import { DeloadCard } from '@/ui/DeloadCard';
 import { QuickWeight } from '@/ui/QuickWeight';
+import { TodayActivity } from '@/ui/TodayActivity';
 import { WeeklySummary } from '@/ui/WeeklySummary';
 import { colors, space } from '@/ui/theme';
 import { showAlert } from '@/ui/alert';
@@ -129,6 +130,8 @@ export default function Inicio() {
           </Txt>
         </Card>
       )}
+
+      <TodayActivity today={todayIso} />
 
       {next?.session && !active ? (
         <Card>

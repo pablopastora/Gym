@@ -12,7 +12,6 @@ import { useAsyncQuery, useProfile } from '@/hooks/useDb';
 import { useNow } from '@/hooks/useNow';
 import { useScreenAwake } from '@/hooks/useScreenAwake';
 import {
-  addExerciseToWorkout,
   completeSet,
   discardWorkout,
   finishWorkout,
@@ -31,6 +30,7 @@ import { BigButton, EmptyState, Icon, Screen, Txt } from '@/ui/components';
 import { ExerciseCard } from '@/ui/session/ExerciseCard';
 import { RestTimerBar } from '@/ui/session/RestTimerBar';
 import type { SetValues } from '@/ui/session/SetRow';
+import { addExerciseOrCardio } from '@/ui/sessionStart';
 import { colors, radius, space } from '@/ui/theme';
 import { showAlert } from '@/ui/alert';
 
@@ -157,7 +157,7 @@ export default function Sesion() {
   const onSubstitute = (weId: number) =>
     pickExercise((exerciseId) => substituteWorkoutExercise(db, weId, exerciseId, profile));
 
-  const onAddExercise = () => pickExercise((exerciseId) => addExerciseToWorkout(db, w.id, exerciseId, profile));
+  const onAddExercise = () => pickExercise((exerciseId) => addExerciseOrCardio(w, exerciseId, profile));
 
   const allSets = w.exercises.flatMap((e) => e.sets);
   const completed = allSets.filter((s) => s.completed).length;

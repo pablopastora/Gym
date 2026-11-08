@@ -3,6 +3,7 @@ import { eq, sql } from 'drizzle-orm';
 import { DEFAULT_ROUTINE, DEFAULT_ROUTINE_NAME } from '@/data/defaultRoutine';
 import { buildExerciseLibrary } from '@/data/library';
 
+import { seedBaseFoods } from '@/repositories/foods';
 import { backfillKcal } from '@/repositories/kcal';
 
 import { appMeta, exercise, profile, routine, routineDay, routineExercise } from './schema';
@@ -108,6 +109,9 @@ export async function runSeed(db: AppDb) {
     await seedDefaultRoutine(db);
     await setMeta(db, 'default_routine_seeded', '1');
   }
+
+  // Alimentos básicos (lista local) para el diario de comidas.
+  await seedBaseFoods(db);
 
   // Kcal de entrenos y cardio anteriores (una vez por versión del cálculo):
   // v2 = cardio con ecuaciones ACSM/MET por intensidad y fuerza sin ejercicios de cardio.

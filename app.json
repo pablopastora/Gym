@@ -66,6 +66,15 @@
           "cameraPermission": "Gym usa la cámara para hacer fotos de progreso que se guardan solo dentro de la app.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Gym usa la cámara para leer el código de barras de los alimentos.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
       ]
     ],
     "experiments": {

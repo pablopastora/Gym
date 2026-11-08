@@ -57,6 +57,13 @@
       "when": 1794153780796,
       "tag": "0007_gasto_energetico",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1794154120168,
+      "tag": "0008_diario_comidas",
+      "breakpoints": true
     }
   ]
 }

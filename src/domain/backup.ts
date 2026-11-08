@@ -32,6 +32,9 @@ export const BACKUP_TABLES = [
   'routineSuggestion',
   'dayOverride',
   'energyAdjustment',
+  'food',
+  'recipeItem',
+  'diaryEntry',
 ] as const;
 
 export type BackupTable = (typeof BACKUP_TABLES)[number];
@@ -105,3 +108,64 @@ export function toCsv(headers: string[], rows: CsvValue[][]): string {
 }
 
 export const MEASUREMENT_CSV_HEADERS = ['fecha', 'cintura_cm', 'pecho_cm', 'brazo_cm', 'muslo_cm', 'cadera_cm', 'grasa_pct', 'nota'];
+
+// ───────────── CSV de nutrición ─────────────
+
+const MEAL_NAMES: Record<string, string> = { desayuno: 'Desayuno', comida: 'Comida', merienda: 'Merienda', cena: 'Cena', snacks: 'Snacks' };
+
+export function diaryCsv(
+  rows: { date: string; meal: string; name: string; quantity: number | null; unit: string | null; grams: number | null; kcal: number; protein: number; carbs: number; fat: number; fiber: number }[],
+) {
+  return toCsv(
+    ['fecha', 'comida', 'alimento', 'cantidad', 'unidad', 'gramos', 'kcal', 'proteina_g', 'hidratos_g', 'grasas_g', 'fibra_g'],
+    rows.map((r) => [r.date, MEAL_NAMES[r.meal] ?? r.meal, r.name, r.quantity, r.unit, r.grams, r.kcal, r.protein, r.carbs, r.fat, r.fiber]),
+  );
+}
+
+export function foodsCsv(
+  rows: {
+    name: string;
+    brand: string | null;
+    barcode: string | null;
+    source: string;
+    category: string;
+    kcal: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number | null;
+    unitLabel: string | null;
+    unitG: number | null;
+    servingG: number | null;
+    isFavorite: boolean;
+    pref?: string | null;
+    inPantry?: boolean;
+    archived: boolean;
+  }[],
+) {
+  return toCsv(
+    ['nombre', 'marca', 'codigo_barras', 'origen', 'categoria', 'kcal_100g', 'proteina_100g', 'hidratos_100g', 'grasas_100g', 'fibra_100g', 'unidad', 'gramos_unidad', 'racion_g', 'favorito', 'preferencia', 'en_casa', 'borrado'],
+    rows.map((f) => [f.name, f.brand, f.barcode, f.source, f.category, f.kcal, f.protein, f.carbs, f.fat, f.fiber, f.unitLabel, f.unitG, f.servingG, f.isFavorite, f.pref ?? null, f.inPantry ?? false, f.archived]),
+  );
+}
+
+export function recipesCsv(rows: { recipe: string; servings: number | null; ingredient: string; grams: number }[]) {
+  return toCsv(
+    ['receta', 'raciones', 'ingrediente', 'gramos'],
+    rows.map((r) => [r.recipe, r.servings, r.ingredient, r.grams]),
+  );
+}
+
+export function cardioCsv(
+  rows: { date: string; type: string; durationMin: number; speedKmh: number | null; inclinePct: number | null; intensity: string | null; distanceKm: number | null; steps: number | null; kcal: number | null; notes: string | null }[],
+) {
+  return toCsv(
+    ['fecha', 'tipo', 'minutos', 'km_h', 'pendiente_pct', 'intensidad', 'km', 'pasos', 'kcal_estimadas', 'notas'],
+    rows.map((c) => [c.date, c.type, c.durationMin, c.speedKmh, c.inclinePct, c.intensity, c.distanceKm, c.steps, c.kcal, c.notes]),
+  );
+}
+
+/** Objetivos y preferencias de nutrición (clave;valor). */
+export function goalsCsv(pairs: [string, CsvValue][]) {
+  return toCsv(['ajuste', 'valor'], pairs);
+}

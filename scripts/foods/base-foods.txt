@@ -1,0 +1,249 @@
+# clave|nombre|NDB (USDA SR28)|categoría|etiquetas|unidad:gramos|ración (g)
+pollo_pechuga_cruda|Pechuga de pollo (cruda)|05062|carne|carne||150
+pollo_pechuga_plancha|Pechuga de pollo a la plancha|05064|carne|carne||130
+pollo_muslo_cocinado|Muslo de pollo sin piel (asado)|05098|carne|carne|1 muslo:90|130
+pollo_entero_asado|Pollo asado con piel|05009|carne|carne||150
+pavo_pechuga_cruda|Pechuga de pavo (cruda)|05710|carne|carne||150
+pavo_fiambre|Fiambre de pechuga de pavo|07081|carne|carne|1 loncha:10|60
+pavo_picado|Carne picada de pavo (cocinada)|05306|carne|carne||120
+ternera_filete_crudo|Filete de ternera magro (crudo)|23356|carne|carne||150
+ternera_filete_plancha|Filete de ternera a la plancha|13456|carne|carne||130
+ternera_picada_cruda|Carne picada de ternera 10 % grasa (cruda)|23562|carne|carne||125
+ternera_picada_5|Carne picada de ternera 5 % grasa (cruda)|23557|carne|carne||125
+ternera_picada_20|Carne picada mixta 20 % grasa (cruda)|23572|carne|carne||125
+cerdo_lomo_crudo|Lomo de cerdo (crudo)|10060|carne|carne,cerdo||150
+cerdo_lomo_plancha|Lomo de cerdo a la plancha|10061|carne|carne,cerdo||130
+cerdo_chuleta|Chuleta de cerdo (cocinada)|10038|carne|carne,cerdo|1 chuleta:120|130
+cerdo_costilla|Costillas de cerdo (asadas)|10940|carne|carne,cerdo||150
+jamon_cocido|Jamón cocido|07029|carne|carne,cerdo|1 loncha:15|60
+chorizo|Chorizo|07019|carne|carne,cerdo|1 rodaja:5|30
+salchichon|Salchichón / salami|07071|carne|carne,cerdo|1 rodaja:5|30
+bacon|Bacon (cocinado)|10862|carne|carne,cerdo|1 loncha:8|30
+salchicha_fresca|Salchichas frescas de cerdo (cocinadas)|07064|carne|carne,cerdo|1 salchicha:50|100
+conejo|Conejo (cocinado)|17178|carne|carne||150
+cordero|Cordero, pierna (asada)|17014|carne|carne||130
+higado_ternera|Hígado de ternera (cocinado)|13327|carne|carne||120
+hamburguesa_ternera|Hamburguesa de ternera (cocinada)|23568|carne|carne|1 hamburguesa:90|90
+merluza|Merluza (cruda)|15132|pescado|pescado||150
+merluza_cocinada|Merluza (cocinada)|15133|pescado|pescado||150
+bacalao_fresco|Bacalao fresco (crudo)|15015|pescado|pescado||150
+bacalao_cocinado|Bacalao (cocinado)|15016|pescado|pescado||150
+bacalao_salado|Bacalao salado (desalado no incluido)|15018|pescado|pescado||50
+salmon_crudo|Salmón (crudo)|15236|pescado|pescado||150
+salmon_cocinado|Salmón (cocinado)|15237|pescado|pescado||130
+salmon_ahumado|Salmón ahumado|15077|pescado|pescado|1 loncha:20|60
+atun_fresco|Atún fresco (crudo)|15127|pescado|pescado||150
+atun_natural|Atún al natural (lata, escurrido)|15121|pescado|pescado|1 lata:56|56
+atun_aceite|Atún en aceite (lata, escurrido)|15119|pescado|pescado|1 lata:56|56
+sardina_lata|Sardinas en aceite (lata, escurridas)|15088|pescado|pescado|1 lata:85|85
+sardina_tomate|Sardinas en tomate (lata)|15089|pescado|pescado||100
+caballa|Caballa (cruda)|15046|pescado|pescado||150
+caballa_lata|Caballa en aceite (lata)|15048|pescado|pescado|1 lata:85|85
+dorada|Dorada / lubina (cruda)|15091|pescado|pescado||150
+lubina_cocinada|Lubina (cocinada)|15092|pescado|pescado||150
+trucha|Trucha (cocinada)|15241|pescado|pescado||150
+lenguado|Lenguado / gallo (crudo)|15028|pescado|pescado||150
+rape|Rape (crudo)|15054|pescado|pescado||150
+boqueron|Boquerones / anchoas frescas (crudos)|15001|pescado|pescado||100
+anchoas_aceite|Anchoas en aceite|15002|pescado|pescado|1 lata:30|15
+tilapia|Tilapia / panga (cruda)|15261|pescado|pescado||150
+gambas|Gambas / langostinos (crudos)|15270|marisco|marisco||100
+gambas_cocidas|Gambas cocidas|15271|marisco|marisco||100
+mejillones|Mejillones (cocidos)|15165|marisco|marisco||100
+calamar|Calamar (crudo)|15175|marisco|marisco||150
+pulpo|Pulpo (cocido)|15230|marisco|marisco||150
+sepia|Sepia (cocinada)|15229|marisco|marisco||150
+almejas|Almejas (cocidas)|15159|marisco|marisco||100
+surimi|Surimi / palitos de cangrejo|15109|marisco|pescado|1 palito:15|60
+huevo|Huevo entero|01123|huevo|huevo|1 huevo (M):55|110
+huevo_cocido|Huevo cocido|01129|huevo|huevo|1 huevo (M):50|100
+huevo_frito|Huevo frito|01128|huevo|huevo|1 huevo (M):46|92
+clara_huevo|Clara de huevo|01124|huevo|huevo|1 clara:33|150
+yema_huevo|Yema de huevo|01125|huevo|huevo|1 yema:17|17
+tortilla_francesa|Tortilla francesa|01130|huevo|huevo||120
+jamon_cocido_extra|Jamón cocido extra magro|10134|carne|carne,cerdo|1 loncha:15|60
+salchicha_frankfurt|Salchichas tipo Frankfurt|07950|carne|carne,cerdo|1 salchicha:40|80
+ternera_guisar|Ternera para guisar (cruda)|23093|carne|carne||150
+leche_entera|Leche entera|01077|lacteo|lactosa|1 vaso:250|250
+leche_semi|Leche semidesnatada|01079|lacteo|lactosa|1 vaso:250|250
+leche_desnatada|Leche desnatada|01085|lacteo|lactosa|1 vaso:250|250
+leche_sin_lactosa|Leche semidesnatada sin lactosa|01079|lacteo||1 vaso:250|250
+bebida_soja|Bebida de soja|16120|lacteo|soja|1 vaso:250|250
+bebida_almendra|Bebida de almendra sin azúcar|14091|lacteo|frutos_secos|1 vaso:250|250
+yogur_natural|Yogur natural|01116|lacteo|lactosa|1 yogur:125|125
+yogur_desnatado|Yogur natural desnatado|01118|lacteo|lactosa|1 yogur:125|125
+yogur_griego|Yogur griego natural|01293|lacteo|lactosa|1 yogur:125|125
+yogur_griego_0|Yogur griego 0 %|01256|lacteo|lactosa|1 yogur:125|170
+skyr|Skyr / yogur proteico natural|01287|lacteo|lactosa|1 yogur:150|150
+kefir|Kéfir|01289|lacteo|lactosa|1 vaso:200|200
+queso_fresco_batido|Queso fresco batido 0 %|01014|lacteo|lactosa||250
+requeson|Requesón / cottage|01015|lacteo|lactosa||150
+queso_burgos|Queso fresco tipo Burgos|01037|lacteo|lactosa|1 tarrina:75|75
+mozzarella|Mozzarella|01026|lacteo|lactosa|1 bola:125|60
+mozzarella_light|Mozzarella light|01029|lacteo|lactosa||60
+queso_curado|Queso curado (tipo manchego)|01033|lacteo|lactosa|1 cuña:15|30
+queso_semi|Queso semicurado|01009|lacteo|lactosa|1 loncha:20|30
+queso_lonchas|Queso en lonchas (gouda/edam)|01022|lacteo|lactosa|1 loncha:20|40
+queso_edam|Queso edam|01018|lacteo|lactosa|1 loncha:20|40
+queso_feta|Queso feta|01019|lacteo|lactosa||40
+queso_cabra|Queso de cabra (semicurado)|01157|lacteo|lactosa||30
+queso_crema|Queso crema|01017|lacteo|lactosa||30
+queso_rallado|Queso rallado (parmesano)|01032|lacteo|lactosa|1 cucharada:5|10
+nata|Nata para cocinar|01050|lacteo|lactosa||50
+mantequilla|Mantequilla|01145|grasa|lactosa|1 nuez:10|10
+proteina_whey|Proteína whey (polvo)|14066|lacteo|lactosa|1 cacito:30|30
+lentejas_crudas|Lentejas (crudas)|16069|legumbre||1 plato:70|70
+lentejas_cocidas|Lentejas cocidas|16070|legumbre||1 plato:250|250
+garbanzos_crudos|Garbanzos (crudos)|16056|legumbre||1 plato:70|70
+garbanzos_cocidos|Garbanzos cocidos (bote)|16359|legumbre||1 bote:250|200
+alubias_crudas|Alubias blancas (crudas)|16049|legumbre||1 plato:70|70
+alubias_cocidas|Alubias blancas cocidas|16050|legumbre||1 plato:250|200
+alubias_rojas|Alubias rojas cocidas|16028|legumbre||1 plato:250|200
+judias_pintas|Alubias pintas cocidas|16043|legumbre||1 plato:250|200
+guisantes|Guisantes (congelados, cocidos)|11313|legumbre||1 ración:150|150
+habas|Habas (cocidas)|16053|legumbre||1 ración:150|150
+soja_texturizada|Soja texturizada|16121|legumbre|soja||40
+edamame|Edamame|11212|legumbre|soja||100
+tofu|Tofu firme|16126|legumbre|soja||150
+tempeh|Tempeh|16114|legumbre|soja||100
+hummus|Hummus|16158|legumbre|||50
+cacahuete_crema|Crema de cacahuete|16398|frutos_secos|frutos_secos|1 cucharada:16|16
+arroz_crudo|Arroz blanco (crudo)|20044|cereal||1 plato:80|80
+arroz_cocido|Arroz blanco cocido|20045|cereal||1 plato:200|200
+arroz_integral_crudo|Arroz integral (crudo)|20036|cereal||1 plato:80|80
+arroz_integral_cocido|Arroz integral cocido|20037|cereal||1 plato:200|200
+arroz_basmati|Arroz basmati (crudo)|20050|cereal||1 plato:80|80
+pasta_cruda|Pasta (cruda)|20120|cereal|gluten|1 plato:80|80
+pasta_cocida|Pasta cocida|20121|cereal|gluten|1 plato:200|200
+pasta_integral_cruda|Pasta integral (cruda)|20124|cereal|gluten|1 plato:80|80
+pasta_integral_cocida|Pasta integral cocida|20125|cereal|gluten|1 plato:200|200
+cuscus_crudo|Cuscús (crudo)|20028|cereal|gluten||70
+cuscus_cocido|Cuscús cocido|20029|cereal|gluten||180
+quinoa_cruda|Quinoa (cruda)|20035|cereal||1 plato:70|70
+quinoa_cocida|Quinoa cocida|20137|cereal||1 plato:185|185
+avena|Copos de avena|08120|cereal|gluten|1 cucharada:10|50
+pan_blanco|Pan blanco (barra)|18029|cereal|gluten|1 rebanada:30|60
+pan_integral|Pan integral|18075|cereal|gluten|1 rebanada:30|60
+pan_molde|Pan de molde blanco|18069|cereal|gluten|1 rebanada:25|50
+pan_centeno|Pan de centeno|18060|cereal|gluten|1 rebanada:30|60
+tortilla_trigo|Tortilla de trigo|18364|cereal|gluten|1 tortilla:40|40
+tostadas|Pan tostado / biscotes|18220|cereal|gluten|1 tostada:8|30
+tortitas_arroz|Tortitas de arroz|19816|cereal||1 tortita:9|27
+cereales_desayuno|Copos de maíz (tipo corn flakes)|08020|cereal||1 bol:30|30
+harina_trigo|Harina de trigo|20081|cereal|gluten|1 cucharada:10|30
+harina_avena|Harina de avena|20132|cereal|gluten||40
+maiz_dulce|Maíz dulce (lata)|11172|cereal||1 lata:140|80
+patata_cruda|Patata (cruda)|11352|tuberculo||1 patata:200|200
+patata_cocida|Patata cocida|11367|tuberculo||1 patata:170|200
+patata_asada|Patata asada / al horno|11674|tuberculo||1 patata:170|200
+patatas_fritas|Patatas fritas (caseras)|11403|tuberculo|||100
+boniato|Boniato asado|11508|tuberculo||1 boniato:150|150
+boniato_crudo|Boniato (crudo)|11507|tuberculo||1 boniato:150|150
+manzana|Manzana|09003|fruta||1 manzana:180|180
+platano|Plátano|09040|fruta||1 plátano:120|120
+naranja|Naranja|09200|fruta||1 naranja:180|180
+mandarina|Mandarina|09218|fruta||1 mandarina:80|160
+pera|Pera|09252|fruta||1 pera:170|170
+fresas|Fresas|09316|fruta||1 bol:150|150
+kiwi|Kiwi|09148|fruta||1 kiwi:75|150
+uvas|Uvas|09132|fruta||1 racimo:150|150
+melon|Melón|09181|fruta||1 tajada:200|200
+sandia|Sandía|09326|fruta||1 tajada:250|250
+pina|Piña|09266|fruta||1 rodaja:100|150
+melocoton|Melocotón|09236|fruta||1 melocotón:150|150
+nectarina|Nectarina|09191|fruta||1 nectarina:140|140
+albaricoque|Albaricoque|09021|fruta||1 albaricoque:35|140
+ciruela|Ciruela|09279|fruta||1 ciruela:65|130
+cerezas|Cerezas|09070|fruta||1 puñado:100|150
+mango|Mango|09176|fruta||1 mango:300|150
+arandanos|Arándanos|09050|fruta||1 puñado:50|100
+frambuesas|Frambuesas|09302|fruta||1 puñado:60|100
+higo|Higos|09089|fruta||1 higo:50|100
+granada|Granada|09286|fruta||1 granada:250|150
+caqui|Caqui|09263|fruta||1 caqui:170|170
+pomelo|Pomelo|09112|fruta||1/2 pomelo:150|150
+limon|Limón (zumo)|09152|fruta||1 cucharada:15|15
+aguacate|Aguacate|09037|grasa||1 aguacate:150|75
+datiles|Dátiles|09421|fruta||1 dátil:24|48
+pasas|Uvas pasas|09298|fruta|||30
+orejones|Orejones de albaricoque|09032|fruta|||30
+zumo_naranja|Zumo de naranja natural|09206|fruta||1 vaso:200|200
+compota_manzana|Compota de manzana sin azúcar|09019|fruta|||100
+tomate|Tomate|11529|verdura||1 tomate:150|150
+tomate_triturado|Tomate triturado (lata)|11531|verdura|||100
+tomate_frito|Tomate frito|06931|verdura|||50
+lechuga|Lechuga|11251|verdura||1 plato:100|100
+canonigos|Canónigos / mezcla de brotes|11253|verdura||1 bolsa:125|80
+espinacas|Espinacas|11457|verdura||1 plato:150|150
+espinacas_cocidas|Espinacas cocidas|11458|verdura|||150
+pepino|Pepino|11205|verdura||1 pepino:300|150
+pimiento_rojo|Pimiento rojo|11821|verdura||1 pimiento:150|150
+pimiento_verde|Pimiento verde|11333|verdura||1 pimiento:120|120
+cebolla|Cebolla|11282|verdura||1 cebolla:150|75
+ajo|Ajo|11215|verdura||1 diente:4|4
+zanahoria|Zanahoria|11124|verdura||1 zanahoria:70|100
+calabacin|Calabacín|11477|verdura||1 calabacín:250|200
+calabacin_cocinado|Calabacín cocinado|11478|verdura|||200
+berenjena|Berenjena|11209|verdura||1 berenjena:300|200
+brocoli|Brócoli|11090|verdura||1 ración:200|200
+brocoli_cocido|Brócoli cocido|11091|verdura|||200
+coliflor|Coliflor|11135|verdura||1 ración:200|200
+judias_verdes|Judías verdes|11052|verdura||1 ración:200|200
+judias_verdes_cocidas|Judías verdes cocidas|11053|verdura|||200
+champinones|Champiñones|11260|verdura||1 ración:150|150
+champinones_cocinados|Champiñones cocidos|11261|verdura|||150
+esparragos|Espárragos verdes|11011|verdura||1 manojo:200|150
+esparragos_lata|Espárragos blancos (bote)|11015|verdura|||100
+alcachofa|Alcachofa (cocida)|11008|verdura||1 alcachofa:120|150
+puerro|Puerro|11246|verdura||1 puerro:90|90
+apio|Apio|11143|verdura|||100
+col|Repollo / col|11109|verdura|||150
+coles_bruselas|Coles de Bruselas|11098|verdura|||150
+lombarda|Lombarda|11112|verdura|||150
+acelgas|Acelgas|11147|verdura|||200
+calabaza|Calabaza|11422|verdura|||200
+remolacha|Remolacha cocida|11081|verdura|||100
+rucula|Rúcula|11959|verdura|||50
+pimientos_piquillo|Pimientos asados|11916|verdura|||100
+menestra|Menestra de verduras (congelada)|11584|verdura|||200
+aceitunas|Aceitunas verdes|09195|grasa||1 aceituna:4|30
+aceite_oliva|Aceite de oliva|04053|grasa||1 cucharada:10|10
+aceite_girasol|Aceite de girasol|04060|grasa||1 cucharada:10|10
+aceite_coco|Aceite de coco|04047|grasa||1 cucharada:10|10
+mayonesa|Mayonesa|04025|grasa||1 cucharada:14|14
+mayonesa_light|Mayonesa ligera|04641|grasa||1 cucharada:14|14
+almendras|Almendras|12061|frutos_secos|frutos_secos|1 puñado:25|25
+nueces|Nueces|12155|frutos_secos|frutos_secos|1 nuez:5|25
+avellanas|Avellanas|12120|frutos_secos|frutos_secos|1 puñado:25|25
+anacardos|Anacardos|12087|frutos_secos|frutos_secos|1 puñado:25|25
+pistachos|Pistachos|12151|frutos_secos|frutos_secos|1 puñado:25|25
+cacahuetes|Cacahuetes tostados|16390|frutos_secos|frutos_secos|1 puñado:25|25
+pipas_girasol|Pipas de girasol (peladas)|12036|frutos_secos|||25
+semillas_chia|Semillas de chía|12006|frutos_secos||1 cucharada:12|12
+semillas_lino|Semillas de lino|12220|frutos_secos||1 cucharada:10|10
+sesamo|Sésamo|12023|frutos_secos||1 cucharada:9|9
+crema_almendra|Crema de almendra|12195|frutos_secos|frutos_secos|1 cucharada:16|16
+chocolate_negro|Chocolate negro 70-85 %|19904|otros|lactosa|1 onza:10|20
+azucar|Azúcar|19335|otros||1 cucharadita:5|5
+miel|Miel|19296|otros||1 cucharada:21|21
+mermelada|Mermelada|19297|otros||1 cucharada:20|20
+galletas_maria|Galletas tipo María|18212|otros|gluten|1 galleta:6|30
+ketchup|Kétchup|11935|otros||1 cucharada:15|15
+mostaza|Mostaza|02046|otros||1 cucharadita:5|5
+salsa_soja|Salsa de soja|16123|otros|soja,gluten|1 cucharada:16|16
+vinagre|Vinagre|02069|otros||1 cucharada:15|15
+cerveza|Cerveza|14003|bebida|gluten|1 caña:200|330
+cerveza_sin|Cerveza sin alcohol|14305|bebida|gluten|1 lata:330|330
+vino_tinto|Vino tinto|14096|bebida||1 copa:150|150
+refresco_cola|Refresco de cola|14148|bebida||1 lata:330|330
+refresco_zero|Refresco zero|14416|bebida||1 lata:330|330
+cafe|Café solo|14209|bebida||1 taza:60|60
+patatas_chips|Patatas fritas de bolsa|19411|otros|||30
+pizza|Pizza (masa normal)|21224|otros|gluten,lactosa|1 porción:110|110
+croissant|Cruasán|18239|otros|gluten,lactosa|1 cruasán:57|57
+magdalena|Magdalena|18273|otros|gluten,huevo,lactosa|1 magdalena:57|57
+helado|Helado de vainilla|19095|otros|lactosa||70
+barrita_proteica|Barrita de cereales|19015|otros|gluten|1 barrita:25|25
+lechuga_iceberg|Lechuga iceberg|11252|verdura|||100
+noodles_arroz|Fideos de arroz (crudos)|20133|cereal|||70
+pollo_muslo_crudo|Contramuslo de pollo con piel (crudo)|05066|carne|carne|1 muslo:100|150

@@ -36,6 +36,7 @@ export default function TabsLayout() {
       }}>
       <Tabs.Screen name="index" options={tab('Inicio', 'home-variant-outline')} />
       <Tabs.Screen name="entrenar" options={tab('Entrenar', 'dumbbell')} />
+      <Tabs.Screen name="nutricion" options={tab('Nutrición', 'food-apple-outline')} />
       <Tabs.Screen name="rutinas" options={tab('Rutinas', 'clipboard-list-outline')} />
       <Tabs.Screen name="ejercicios" options={tab('Ejercicios', 'book-open-variant')} />
       <Tabs.Screen name="progreso" options={tab('Progreso', 'chart-line')} />

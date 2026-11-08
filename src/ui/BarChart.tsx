@@ -12,15 +12,23 @@ export interface Bar {
   highlight?: boolean;
 }
 
-/** Barras apiladas sencillas con los colores `chart` del tema. */
-export function BarChart({ bars, height = 170, colors: segColors = [chart.primary, chart.secondary], formatY = (v: number) => String(Math.round(v)) }: {
+/** Barras apiladas (o agrupadas, una al lado de otra) con los colores `chart` del tema. */
+export function BarChart({
+  bars,
+  height = 170,
+  colors: segColors = [chart.primary, chart.secondary],
+  formatY = (v: number) => String(Math.round(v)),
+  grouped = false,
+}: {
   bars: Bar[];
   height?: number;
   colors?: string[];
   formatY?: (v: number) => string;
+  /** true = cada valor es una barra junto a las demás (p. ej. ingesta frente a gasto). */
+  grouped?: boolean;
 }) {
   const [width, setWidth] = useState(0);
-  const max = Math.max(1, ...bars.map((b) => b.values.reduce((a, v) => a + v, 0)));
+  const max = Math.max(1, ...bars.map((b) => (grouped ? Math.max(0, ...b.values) : b.values.reduce((a, v) => a + v, 0))));
   if (!bars.some((b) => b.values.some((v) => v > 0))) {
     return (
       <Txt variant="small" color={chart.label}>
@@ -47,6 +55,16 @@ export function BarChart({ bars, height = 170, colors: segColors = [chart.primar
             </SvgText>
           ))}
           {bars.map((b, i) => {
+            if (grouped) {
+              const n = Math.max(1, b.values.length);
+              const gw = Math.min(bw, (slot * 0.8) / n);
+              const x0 = pad.l + slot * i + (slot - gw * n) / 2;
+              return b.values.map((v, j) =>
+                v > 0 ? (
+                  <Rect key={`${i}-${j}`} x={x0 + gw * j} y={y(v)} width={Math.max(1, gw - 2)} height={y(0) - y(v)} rx={3} fill={segColors[j % segColors.length]} opacity={b.highlight ? 1 : 0.8} />
+                ) : null,
+              );
+            }
             const x = pad.l + slot * i + (slot - bw) / 2;
             let acc = 0;
             return b.values.map((v, j) => {

@@ -11,13 +11,14 @@ import { db } from '@/db/client';
 import { bodyMeasurement, bodyWeight, cardioSession, workout } from '@/db/schema';
 import {
   backupFileName,
+  cardioCsv,
   MEASUREMENT_CSV_HEADERS,
   summarizeBackup,
   toCsv,
   validateBackup,
   type BackupFile,
 } from '@/domain/backup';
-import { exportAll, importAll, SCHEMA_VERSION, setsForCsv } from '@/repositories/backup';
+import { exportAll, importAll, nutritionCsv, SCHEMA_VERSION, setsForCsv } from '@/repositories/backup';
 
 import { syncReminders } from './reminders';
 
@@ -93,9 +94,8 @@ export async function exportCsv() {
         measures.map((m) => [m.date, m.waistCm, m.chestCm, m.armCm, m.thighCm, m.hipCm, m.bodyFatPct, m.note]),
       ),
     ),
-    'cardio.csv': strToU8(
-      toCsv(['fecha', 'tipo', 'minutos', 'pasos', 'km', 'notas'], cardio.map((c) => [c.date, c.type, c.durationMin, c.steps, c.distanceKm, c.notes])),
-    ),
+    'cardio.csv': strToU8(cardioCsv(cardio)),
+    ...Object.fromEntries(Object.entries(await nutritionCsv(db)).map(([name, csv]) => [name, strToU8(csv)])),
   };
   const f = writeFile(new File(Paths.cache, backupFileName('csv')), zipSync(files));
   await share(f, 'application/zip', 'Exportar a CSV');

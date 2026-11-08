@@ -439,3 +439,92 @@ export const energyAdjustment = sqliteTable('energy_adjustment', {
   decidedAt: integer('decided_at'),
   createdAt: createdAt(),
 });
+
+export type MealKey = 'desayuno' | 'comida' | 'merienda' | 'cena' | 'snacks';
+export type FoodSource = 'base' | 'off' | 'propio' | 'receta';
+export type QuantityUnit = 'g' | 'unidad' | 'racion';
+
+/**
+ * Alimentos: lista local inicial (USDA SR28), productos de Open Food Facts cacheados,
+ * alimentos propios y recetas. Valores nutricionales por 100 g.
+ */
+export const food = sqliteTable(
+  'food',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    /** Clave estable de los alimentos de la lista local (null en el resto). */
+    baseKey: text('base_key'),
+    barcode: text('barcode'),
+    source: text('source').$type<FoodSource>().notNull(),
+    name: text('name').notNull(),
+    brand: text('brand'),
+    category: text('category').notNull().default('otros'),
+    tags: text('tags', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
+    kcal: real('kcal').notNull(),
+    protein: real('protein').notNull(),
+    carbs: real('carbs').notNull(),
+    fat: real('fat').notNull(),
+    fiber: real('fiber'),
+    salt: real('salt'),
+    /** Unidad natural («1 huevo») y sus gramos. */
+    unitLabel: text('unit_label'),
+    unitG: real('unit_g'),
+    /** Ración habitual en gramos. */
+    servingG: real('serving_g'),
+    /** Recetas: número de raciones de la receta completa. */
+    servings: real('servings'),
+    isFavorite: integer('is_favorite', { mode: 'boolean' }).notNull().default(false),
+    /** El usuario ha editado un alimento de la lista local: no se sobrescribe al actualizarla. */
+    edited: integer('edited', { mode: 'boolean' }).notNull().default(false),
+    /** Oculto (alimento borrado que sigue en entradas antiguas del diario). */
+    archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+    lastUsedAt: integer('last_used_at'),
+    createdAt: createdAt(),
+    updatedAt: integer('updated_at'),
+  },
+  (t) => [uniqueIndex('food_base_key_idx').on(t.baseKey), index('food_barcode_idx').on(t.barcode), index('food_name_idx').on(t.name)],
+);
+
+/** Ingredientes de una receta (la receta es un `food` con source = 'receta'). */
+export const recipeItem = sqliteTable(
+  'recipe_item',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    recipeId: integer('recipe_id')
+      .notNull()
+      .references(() => food.id, { onDelete: 'cascade' }),
+    foodId: integer('food_id')
+      .notNull()
+      .references(() => food.id, { onDelete: 'cascade' }),
+    grams: real('grams').notNull(),
+    sortOrder: integer('sort_order').notNull().default(0),
+  },
+  (t) => [index('recipe_item_recipe_idx').on(t.recipeId)],
+);
+
+/**
+ * Entradas del diario de comidas. Guardan los valores calculados (instantánea),
+ * para que editar o borrar un alimento no cambie lo ya registrado.
+ */
+export const diaryEntry = sqliteTable(
+  'diary_entry',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    date: text('date').notNull(),
+    meal: text('meal').$type<MealKey>().notNull(),
+    /** null = «calorías rápidas» o alimento borrado. */
+    foodId: integer('food_id').references(() => food.id, { onDelete: 'set null' }),
+    name: text('name').notNull(),
+    quantity: real('quantity'),
+    unit: text('unit').$type<QuantityUnit>(),
+    grams: real('grams'),
+    kcal: real('kcal').notNull(),
+    protein: real('protein').notNull().default(0),
+    carbs: real('carbs').notNull().default(0),
+    fat: real('fat').notNull().default(0),
+    fiber: real('fiber').notNull().default(0),
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index('diary_date_idx').on(t.date)],
+);

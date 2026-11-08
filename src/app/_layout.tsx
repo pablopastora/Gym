@@ -106,6 +106,12 @@ function MigratedApp() {
         <Stack.Screen name="selector-ejercicio" options={{ title: 'Elegir ejercicio', presentation: 'modal' }} />
         <Stack.Screen name="cardio/nuevo" options={{ title: 'Registrar cardio' }} />
         <Stack.Screen name="calendario" options={{ title: 'Calendario' }} />
+        <Stack.Screen name="comida/anadir" options={{ title: 'Añadir alimento' }} />
+        <Stack.Screen name="comida/cantidad" options={{ title: 'Cantidad' }} />
+        <Stack.Screen name="comida/alimento" options={{ title: 'Alimento' }} />
+        <Stack.Screen name="comida/receta" options={{ title: 'Receta' }} />
+        <Stack.Screen name="comida/rapidas" options={{ title: 'Calorías rápidas' }} />
+        <Stack.Screen name="comida/escanear" options={{ title: 'Escanear código' }} />
         <Stack.Screen name="ajustes/index" options={{ title: 'Ajustes' }} />
         <Stack.Screen name="ajustes/perfil" options={{ title: 'Perfil y objetivo' }} />
         <Stack.Screen name="ajustes/entrenamiento" options={{ title: 'Entrenamiento' }} />

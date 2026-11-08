@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { db } from '@/db/client';
-import { formatDateShort } from '@/domain/dates';
+import { formatDateShort, toISODate } from '@/domain/dates';
 import { fmtNum } from '@/domain/format';
 import { useAsyncQuery, useProfile } from '@/hooks/useDb';
 import { measurementsQuery, photosQuery, weightsQuery } from '@/repositories/body';
@@ -15,6 +15,7 @@ import { DeloadCard } from '@/ui/DeloadCard';
 import { MuscleMapCard } from '@/ui/MuscleMapCard';
 import { colors, radius, space } from '@/ui/theme';
 import { WeeklyKcal } from '@/ui/WeeklyKcal';
+import { WeeklyIntake } from '@/ui/nutrition/WeeklyIntake';
 import { WeeklySummary } from '@/ui/WeeklySummary';
 
 type Tab = 'cuerpo' | 'fuerza';
@@ -52,6 +53,9 @@ function Cuerpo() {
 
       <SectionTitle>Gasto de energía</SectionTitle>
       <WeeklyKcal />
+
+      <SectionTitle>Comido frente a gastado</SectionTitle>
+      <WeeklyIntake today={toISODate()} />
 
       <Row gap={space.sm}>
         <BigButton title="Peso" icon="scale-bathroom" kind="secondary" style={{ flex: 1, paddingHorizontal: space.sm }} onPress={() => router.push('/cuerpo/peso')} />

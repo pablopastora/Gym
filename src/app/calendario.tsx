@@ -1,11 +1,11 @@
-import { isNotNull } from 'drizzle-orm';
+import { isNotNull, sql } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { db } from '@/db/client';
-import { cardioSession, workout } from '@/db/schema';
+import { cardioSession, diaryEntry, workout } from '@/db/schema';
 import { dayOfMonth, monthGrid, monthTitle, shiftMonth, WEEKDAYS_SHORT } from '@/domain/calendar';
 import { formatDateLong, toISODate } from '@/domain/dates';
 import { fmtDuration, fmtNum } from '@/domain/format';
@@ -24,6 +24,10 @@ export default function Calendario() {
       .where(isNotNull(workout.endedAt)),
   );
   const { data: cardio } = useLiveQuery(db.select().from(cardioSession));
+  const { data: intake } = useLiveQuery(
+    db.select({ date: diaryEntry.date, kcal: sql<number>`sum(${diaryEntry.kcal})` }).from(diaryEntry).groupBy(diaryEntry.date),
+  );
+  const intakeByDate = useMemo(() => new Map((intake ?? []).map((r) => [r.date, r.kcal])), [intake]);
 
   const byDate = useMemo(() => {
     const m = new Map<string, { workouts: NonNullable<typeof workouts>; cardio: NonNullable<typeof cardio> }>();
@@ -45,6 +49,8 @@ export default function Calendario() {
   const trainedDays = monthDays.filter((d) => byDate.get(d)?.workouts.length).length;
   const cardioMin = monthDays.reduce((a, d) => a + (byDate.get(d)?.cardio.reduce((s, c) => s + c.durationMin, 0) ?? 0), 0);
   const sel = byDate.get(selected);
+  const selIntake = intakeByDate.get(selected);
+  const intakeDays = monthDays.filter((d) => intakeByDate.has(d)).length;
 
   return (
     <Screen>
@@ -84,7 +90,10 @@ export default function Calendario() {
                       {String(dayOfMonth(d))}
                     </Txt>
                   </View>
-                  <View style={[styles.dot, { backgroundColor: info?.cardio.length ? colors.warning : 'transparent' }]} />
+                  <View style={{ flexDirection: 'row', gap: 3 }}>
+                    <View style={[styles.dot, { backgroundColor: info?.cardio.length ? colors.warning : 'transparent' }]} />
+                    <View style={[styles.dot, { backgroundColor: intakeByDate.has(d) ? colors.success : 'transparent' }]} />
+                  </View>
                 </Pressable>
               );
             })}
@@ -94,6 +103,7 @@ export default function Calendario() {
           <Legend color={colors.accent} label="Entreno" />
           <Legend color={colors.accent} label="Descarga" outline />
           <Legend color={colors.warning} label="Cardio" dot />
+          <Legend color={colors.success} label="Comidas" dot />
         </Row>
       </Card>
 
@@ -101,10 +111,14 @@ export default function Calendario() {
         <Row align="flex-start">
           <Stat label="Días entrenados" value={String(trainedDays)} color={colors.accentText} />
           <Stat label="Cardio" value={`${fmtNum(cardioMin, 0)} min`} />
+          <Stat label="Comidas" value={String(intakeDays)} sub="días registrados" />
         </Row>
       </Card>
 
       <Txt variant="h3">{formatDateLong(selected)}</Txt>
+      {selIntake != null ? (
+        <ListRow icon="food-apple-outline" title={`Comidas · ${fmtNum(selIntake, 0)} kcal`} subtitle="Registradas en el diario" onPress={() => router.push('/nutricion')} />
+      ) : null}
       {sel && (sel.workouts.length || sel.cardio.length) ? (
         <View style={{ borderRadius: radius.lg, overflow: 'hidden', gap: 1 }}>
           {sel.workouts.map((w) => (
@@ -121,7 +135,7 @@ export default function Calendario() {
           ))}
         </View>
       ) : (
-        <Txt color={colors.textDim}>{selected > today ? 'Día futuro.' : 'Sin actividad registrada.'}</Txt>
+        <Txt color={colors.textDim}>{selected > today ? 'Día futuro.' : 'Sin entrenos ni cardio.'}</Txt>
       )}
       <BigButton title="Recordatorios de entreno" icon="bell-outline" kind="secondary" onPress={() => router.push('/ajustes/recordatorios')} />
     </Screen>
